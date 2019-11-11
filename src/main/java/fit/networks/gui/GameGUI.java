@@ -33,10 +33,7 @@ public class GameGUI extends JFrame {
         @Override
         public void actionPerformed(ActionEvent actionEvent) {
             JButton btn = (JButton) actionEvent.getSource();
-            if (btn.getName().equalsIgnoreCase(Protocol.getBackButtonName())) {
-                snakeGUI.getGameGUI().setVisible(false);
-                snakeGUI.setVisible(true);
-            }
+
         }
     }
 }
