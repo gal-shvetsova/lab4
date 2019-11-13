@@ -1,12 +1,6 @@
 package fit.networks.gui.protocol;
 
 public class Protocol {
-    private static String newGameButtonName = "Новая игра";
-    private static String backGameButtonName = "Назад";
-    private static String chooseGameButtonName = "Выбрать игру";
-    private static String leadingLabelName = "Ведущий:";
-    private static String sizeLabelName = "Размер:";
-    private static String  foodLabelName = "Еда:";
     private static Object[] ratingColumnsHeaders = new String[] {"№", "Имя",
             "Очки"};
     private static Object[] allGamesColumnsHeaders = new String[] {"Ведущий", "№",
@@ -14,15 +8,15 @@ public class Protocol {
 
 
     public static String getNewGameButtonName() {
-        return newGameButtonName;
+        return "Новая игра";
     }
 
     public static String getBackButtonName() {
-        return backGameButtonName;
+        return "Назад";
     }
 
     public static String getChooseGameButtonName() {
-        return chooseGameButtonName;
+        return "Выбрать игру";
     }
 
 
@@ -31,18 +25,50 @@ public class Protocol {
     }
 
     public static String getLeadingLabelName() {
-        return leadingLabelName;
+        return "Ведущий:";
     }
 
     public static String getSizeLabelName() {
-        return sizeLabelName;
+        return "Размер:";
     }
 
     public static String getFoodLabelName() {
-        return foodLabelName;
+        return "Еда:";
     }
 
     public static Object[] getAllGamesColumnsHeaders() {
         return allGamesColumnsHeaders;
+    }
+
+    public static String getWidthLabelName() {
+        return "Ширина";
+    }
+
+    public static String getHeightLabelName() {
+        return "Высота";
+    }
+
+    public static String getFoodStaticName() {
+        return "Количество еды";
+    }
+
+    public static String getDelayMsName() {
+        return "Задержка";
+    }
+
+    public static String getDeadFoodProbName() {
+        return "Коэффициент";
+    }
+
+    public static String getFoodPerPlayerName() {
+        return "Количество еды на игрока";
+    }
+
+    public static String getOkButtonName() {
+        return "ОК";
+    }
+
+    public static String getCancelButtonName() {
+        return "Отменить";
     }
 }

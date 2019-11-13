@@ -1,8 +1,8 @@
 package fit.networks;
 
-import fit.networks.gamer.Gamer;
+import fit.networks.controller.SnakeSwingController;
 import fit.networks.gui.SnakeGUI;
-import fit.networks.session.Session;
+
 
 import java.net.InetAddress;
 
@@ -18,10 +18,9 @@ public class Main {
             String name = args[0];
             InetAddress ipAddress = InetAddress.getByName(args[1]);
             int port = Integer.parseInt(args[2]);
-            Session session = new Session(name, ipAddress, port);
-            session.start();
-            SnakeGUI snakeGUI = new SnakeGUI();
-            snakeGUI.setVisible(true);
+
+            SnakeSwingController snakeSwingController = new SnakeSwingController(name, ipAddress, port);
+            snakeSwingController.start();
 
         } catch (Exception ex){
             ex.printStackTrace();

@@ -1,5 +1,6 @@
-package fit.networks.gamer;
+package fit.networks.game;
 
+import fit.networks.protocol.SnakesProto;
 import fit.networks.snake.Snake;
 
 import java.net.DatagramPacket;
@@ -15,7 +16,7 @@ public class Gamer {
     private int port;
     private Snake snake;
 
-    public Gamer(String name, InetAddress ipAddress, int port) throws Exception{
+    public Gamer(String name, InetAddress ipAddress, int port) {
         this.name = name;
         this.id = UUID.randomUUID();
         this.ipAddress = ipAddress;
@@ -48,5 +49,12 @@ public class Gamer {
     public void setSnake(Snake snake) {
         this.snake = snake;
     }
+
+    public boolean equals(Gamer gamer){
+        return (gamer.port == port && gamer.ipAddress == ipAddress);
+    }
+
+
+
 
 }

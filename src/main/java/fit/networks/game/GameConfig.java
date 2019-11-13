@@ -1,6 +1,6 @@
 package fit.networks.game;
 
-public class GameConfig {
+class GameConfig {
 
     private int width;           // Ширина поля в клетках (от 10 до 100)
     private int height;          // Высота поля в клетках (от 10 до 100)
@@ -9,14 +9,6 @@ public class GameConfig {
     private int delayMs;      // Задержка между ходами (сменой состояний) в игре, в миллисекундах
     private double deadFoodProb; // Вероятность превращения мёртвой клетки в еду (от 0 до 1).
 
-    public GameConfig(int width, int height, int foodStatic, float foodPerPlayer, int delayMs, float deadFoodProb) {
-        this.width = width;
-        this.height = height;
-        this.foodStatic = foodStatic;
-        this.foodPerPlayer = foodPerPlayer;
-        this.delayMs = delayMs;
-        this.deadFoodProb = deadFoodProb;
-    }
 
     public GameConfig() {
         width = 40;
@@ -66,7 +58,7 @@ public class GameConfig {
     }
 
     public void setFoodPerPlayer(double foodPerPlayer) throws Exception{
-        if (foodPerPlayer < 10 || foodPerPlayer > 100)
+        if (foodPerPlayer < 0 || foodPerPlayer > 100)
             throw new Exception("Incorrect food per player value [" + foodPerPlayer + "]. " +
                     "Food per player value should be between 10 and 100");
         this.foodPerPlayer = foodPerPlayer;

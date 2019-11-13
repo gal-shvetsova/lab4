@@ -6,5 +6,5 @@ import java.util.*;
 public class GameState {
     private int stateOrder;
     private Set<Coordinates> foods = new HashSet<>();
-    private GamePlayers gamePlayers;
+
 }
