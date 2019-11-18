@@ -6,6 +6,9 @@ public class Protocol {
     private static Object[] allGamesColumnsHeaders = new String[] {"Ведущий", "№",
             "Размер", "Еда", "Вход"};
 
+    public static String getLeaveGameButtonName(){
+        return "Покинуть игру";
+    }
 
     public static String getNewGameButtonName() {
         return "Новая игра";

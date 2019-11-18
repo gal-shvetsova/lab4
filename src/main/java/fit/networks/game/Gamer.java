@@ -1,35 +1,44 @@
 package fit.networks.game;
 
-import fit.networks.protocol.SnakesProto;
-import fit.networks.snake.Snake;
+import fit.networks.game.snake.Snake;
 
-import java.net.DatagramPacket;
 import java.net.InetAddress;
-import java.net.MulticastSocket;
-import java.nio.charset.StandardCharsets;
-import java.util.UUID;
 
 public class Gamer {
     private String name;       // Имя игрока (для отображения в интерфейсе)
-    private UUID id;          // Уникальный идентификатор игрока в пределах игры
+    private int id;          // Уникальный идентификатор игрока в пределах игры
     private InetAddress ipAddress; // IPv4 или IPv6 адрес игрока в виде строки
     private int port;
     private Snake snake;
+    private boolean isMaster;
 
-    public Gamer(String name, InetAddress ipAddress, int port) {
+    public Gamer(String name, InetAddress ipAddress, int port, int id, boolean isMaster) {
         this.name = name;
-        this.id = UUID.randomUUID();
         this.ipAddress = ipAddress;
         this.port = port;
+        this.id = id;
         this.snake = null;
+        this.isMaster = isMaster;
     }
 
+    public Gamer(InetAddress inetAddress, int port){
+        this.ipAddress = inetAddress;
+        this.port = port;
+    }
+
+    public boolean isMaster() {
+        return isMaster;
+    }
+
+    public void makeMaster(){
+        isMaster = true;
+    }
 
     public String getName() {
         return name;
     }
 
-    public UUID getId() {
+    public int getId() {
         return id;
     }
 

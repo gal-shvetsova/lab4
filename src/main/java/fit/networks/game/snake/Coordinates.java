@@ -1,4 +1,4 @@
-package fit.networks.game;
+package fit.networks.game.snake;
 
 public class Coordinates {
     private int x;

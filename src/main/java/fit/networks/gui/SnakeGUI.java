@@ -6,6 +6,7 @@ import fit.networks.gui.protocol.Protocol;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.net.InetAddress;
 
 public class SnakeGUI extends JFrame {
 
@@ -18,12 +19,13 @@ public class SnakeGUI extends JFrame {
     private JLabel sizeValueLabel = new JLabel(Protocol.getSizeLabelName());
     private JLabel foodValueLabel = new JLabel(Protocol.getFoodLabelName());
     private JButton newGameButton = new JButton(new MainFormAction());
+    private JButton leaveGameButton = new JButton(new MainFormAction());
     private JTable ratingTable = new JTable(rating, Protocol.getRatingColumnsHeaders());
     private JTable allGamesTable = new JTable(allGames, Protocol.getAllGamesColumnsHeaders());
     private JPanel gamePanel = new JPanel();
     private JPanel infoPanel = new JPanel();
     private JPanel currentGameInfoPanel = new JPanel();
-    private GameBoard gameBoard;
+    private GameBoard gameBoard = null;
     private SnakeSwingController controller;
 
     private class NewGameForm extends JFrame {
@@ -144,13 +146,16 @@ public class SnakeGUI extends JFrame {
 
         newGameButton.setName(Protocol.getNewGameButtonName());
         newGameButton.setText(Protocol.getNewGameButtonName());
+        leaveGameButton.setName(Protocol.getLeaveGameButtonName());
+        leaveGameButton.setText(Protocol.getLeaveGameButtonName());
+        leaveGameButton.setEnabled(false);
         infoPanel.add(newGameButton, c);
+        infoPanel.add(leaveGameButton, c);
         c.fill = GridBagConstraints.HORIZONTAL;
         infoPanel.add(currentGameInfoPanel, c);
 
         infoPanel.add(new JScrollPane(allGamesTable), c);
-        newGameButton.setName(Protocol.getNewGameButtonName());
-        newGameButton.setText(Protocol.getNewGameButtonName());
+
     }
 
     private void initMain() {
@@ -171,18 +176,26 @@ public class SnakeGUI extends JFrame {
         initMain();
     }
 
+    public void loadNewField(Integer[] x, Integer[] y){
+        if(gameBoard != null)
+            gameBoard.doDrawing(x, y);
+     //   this.pack();
+       // this.repaint();
+    }
+
     public void startGame(int width, int height, int foodStatic, float foodPerPlayer, int delayMs,
                           float deadFoodProb){
         Dimension dim = gamePanel.getSize();
         double dotSize = Math.floor(Math.sqrt(dim.width * dim.height / width / height));
-        gameBoard = new GameBoard(width, height, (int)dotSize);
+        gameBoard = new GameBoard(width, height, (int)dotSize, controller);
         gamePanel.setLayout(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
-        c.gridy = GridBagConstraints.RELATIVE;
+        c.gridy = 0;
         c.gridx = 0;
         c.weightx = 1;
         c.weighty = 1;
-        gamePanel.add(gameBoard, c);
+      //  gameBoard.setSize(gameBoard.);
+        gamePanel.add(gameBoard);
         this.pack();
         this.repaint();
     }
@@ -196,6 +209,12 @@ public class SnakeGUI extends JFrame {
             if (btn == newGameButton){
                 NewGameForm newGameForm = new NewGameForm();
                 newGameForm.setVisible(true);
+                leaveGameButton.setEnabled(true);
+                newGameButton.setEnabled(false);
+            } else if (btn == leaveGameButton){
+                controller.leaveGame();
+                newGameButton.setEnabled(true);
+                leaveGameButton.setEnabled(false);
             }
         }
     }

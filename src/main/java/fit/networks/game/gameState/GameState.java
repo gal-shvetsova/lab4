@@ -1,5 +1,5 @@
 package fit.networks.game.gameState;
-import fit.networks.game.Coordinates;
+import fit.networks.game.snake.Coordinates;
 
 import java.util.*;
 
