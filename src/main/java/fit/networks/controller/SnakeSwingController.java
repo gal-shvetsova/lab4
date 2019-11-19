@@ -91,11 +91,11 @@ public class SnakeSwingController extends SnakeController {
                     break;
                 }
                 case KeyEvent.VK_DOWN: {
-                    game.moveSnake(0, -1);
+                    game.moveSnake(0, 1);
                     break;
                 }
                 case KeyEvent.VK_UP: {
-                    game.moveSnake(0, 1);
+                    game.moveSnake(0, -1);
                     break;
                 }
             }

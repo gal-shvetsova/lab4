@@ -7,6 +7,9 @@ import fit.networks.gui.protocol.Protocol;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.net.InetAddress;
 
 public class SnakeGUI extends JFrame {
@@ -76,7 +79,6 @@ public class SnakeGUI extends JFrame {
             add(okButton, c);
             add(cancelButton,c);
         }
-
 
 
         class NewGameAction extends AbstractAction {
@@ -167,14 +169,31 @@ public class SnakeGUI extends JFrame {
         gamePanel.setBackground(Color.GREEN);
         pane.add(gamePanel, BorderLayout.CENTER);
         pane.add(infoPanel, BorderLayout.EAST);
+        gamePanel.addKeyListener(new TAdapter());
+
     }
 
+    private class TAdapter extends KeyAdapter {
+
+        @Override
+        public void keyPressed(KeyEvent e) {
+            System.out.println("get");
+            int key = e.getKeyCode();
+            controller.keyActivity(key);
+        }
+
+        @Override
+        public void keyReleased(KeyEvent e) {
+            System.out.println("rel");
+        }
+    }
     public SnakeGUI(SnakeSwingController controller) {
         super("Snake");
         this.controller = controller;
         this.setExtendedState(JFrame.MAXIMIZED_BOTH);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         initMain();
+
     }
 
     public void loadNewField(Cell[][] field){
@@ -194,9 +213,12 @@ public class SnakeGUI extends JFrame {
         c.weightx = 1;
         c.weighty = 1;
         gamePanel.add(gameBoard);
+      //  gamePanel.setFocusable(true);
+        gamePanel.requestFocus();
         this.pack();
         this.repaint();
     }
+
     class MainFormAction extends AbstractAction {
         private static final long serialVersionUID = 1L;
 

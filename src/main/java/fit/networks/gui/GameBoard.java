@@ -34,8 +34,8 @@ public class GameBoard extends JPanel implements ActionListener {
                 field[i][j] = new Cell();
         }
         this.controller = controller;
-        setBackground(Color.BLACK);
-        setFocusable(true);
+        setBackground(Color.WHITE);
+     //   setFocusable(true);
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setMinimumSize(new Dimension(WIDTH, HEIGHT));
 
@@ -54,7 +54,7 @@ public class GameBoard extends JPanel implements ActionListener {
             for (int j = 0; j < field[i].length; j++)
                 if (field[i][j].getValue() != 0) {
                     g.setColor(field[i][j].getColor());
-                    g.drawRect(i * DOTSIZE, j * DOTSIZE, DOTSIZE, DOTSIZE);
+                    g.fillRect(i * DOTSIZE, j * DOTSIZE, DOTSIZE, DOTSIZE);
                 }
         }
         Toolkit.getDefaultToolkit().sync();
@@ -67,12 +67,5 @@ public class GameBoard extends JPanel implements ActionListener {
     }
 
 
-    private class TAdapter extends KeyAdapter {
 
-        @Override
-        public void keyPressed(KeyEvent e) {
-            int key = e.getKeyCode();
-
-        }
-    }
 }

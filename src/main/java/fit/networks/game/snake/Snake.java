@@ -142,6 +142,7 @@ public class Snake implements Iterable<Coordinates> {
     public void changeDirection(int x, int y) {
         Direction newDirection = Direction.getDirection(x, y);
         if (newDirection == direction) return;
+        if (direction.isOpposite(newDirection)) return;
         direction = newDirection;
     }
 

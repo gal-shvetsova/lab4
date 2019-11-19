@@ -43,6 +43,18 @@ public enum Direction {
         return null;
     }
 
+    public boolean isOpposite(Direction direction){
+        if (this == LEFT)
+            return direction == RIGHT;
+        if (this == RIGHT)
+            return direction == LEFT;
+        if (this == UP)
+            return direction == DOWN;
+        if (this == DOWN)
+            return direction== UP;
+        return false;
+    }
+
     public static Direction getRandomDirection(){
         return directionOf(LEFT.getValue() + (int) (Math.random() * DOWN.getValue()));
     }
