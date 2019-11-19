@@ -27,7 +27,6 @@ public class Gamer {
         int g = Math.abs(rand.nextInt() % 140);
         int b = Math.abs(rand.nextInt() % 140);
         this.color = new Color(r,g,b);
-       // this.color = Color.RED;
     }
 
     public Gamer(InetAddress inetAddress, int port){
@@ -70,11 +69,9 @@ public class Gamer {
 
     public Color getColor(){return color;}
 
-    public boolean equals(Gamer gamer){
-        return (gamer.port == port && gamer.ipAddress == ipAddress);
+    @Override
+    public boolean equals(Object gamer){
+        return (((Gamer)gamer).port == port && ((Gamer)gamer).ipAddress == ipAddress);
     }
-
-
-
 
 }

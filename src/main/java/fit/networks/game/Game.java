@@ -100,7 +100,7 @@ public class Game {
         }
 
         for (Coordinates food : foods){
-            representation[food.getX()][food.getY()].setFood(); //todo: make set food;
+            representation[food.getX()][food.getY()].setFood();
         }
 
         boolean isGrow = false;

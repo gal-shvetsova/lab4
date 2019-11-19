@@ -61,7 +61,11 @@ public class SnakeSwingController extends SnakeController {
         public void run() {
 
             if (game != null && game.getGamer() != null && game.getGamer().getSnake() != null) {
-                game.getGamer().getSnake().run();
+                if (!game.getGamer().getSnake().isAlive()) {
+                    snakeGUI.showDeadForm();
+                }
+                else
+                    game.getGamer().getSnake().run();
                 snakeGUI.loadNewField(game.makeRepresentation());
             }
         }

@@ -213,10 +213,13 @@ public class SnakeGUI extends JFrame {
         c.weightx = 1;
         c.weighty = 1;
         gamePanel.add(gameBoard);
-      //  gamePanel.setFocusable(true);
         gamePanel.requestFocus();
         this.pack();
         this.repaint();
+    }
+
+    public void showDeadForm() {
+        //todo: make small message about dying
     }
 
     class MainFormAction extends AbstractAction {
