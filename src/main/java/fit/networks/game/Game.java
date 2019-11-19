@@ -10,16 +10,18 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class Game {
+public class Game {  // создается только у мастера, сделать создание из предыдущей игры
     private GameConfig gameConfig = new GameConfig();
-    private Gamer gamer; //todo make gamer part of controller
+    private Gamer gamer; //это мастер
     private ArrayList<Gamer> activeGamers = new ArrayList<>();
     private ArrayList<Gamer> activeGamersPerCycle = new ArrayList<>();
     private ProtoMaker protoMaker = new ProtoMaker();
     private ArrayList<Coordinates> foods = new ArrayList<>();
+
 
     public class PingSender extends TimerTask {
         @Override
@@ -65,7 +67,6 @@ public class Game {
                              float foodPerPlayer, int delayMs, float deadFoodProb) throws Exception{
         gamer = new Gamer(name, inetAddress, port, 20, true);
         Snake snake = new Snake(gamer, width, height);
-
         snake.randomStart();
         gamer.setSnake(snake);
         activeGamers.add(gamer);
@@ -106,18 +107,30 @@ public class Game {
         boolean isGrow = false;
 
         for (Gamer gamer: activeGamers) {
-            for (Coordinates c : gamer.getSnake()) {
-                if (representation[c.getX()][c.getY()].isFood()) {
-                    isGrow = true;
-                    foods.remove(new Coordinates(c.getX(), c.getY()));
+            if (gamer.getSnake().isAlive()) {
+                for (Coordinates c : gamer.getSnake()) {
+                    if (representation[c.getX()][c.getY()].isFood()) {
+                        isGrow = true;
+                        foods.remove(new Coordinates(c.getX(), c.getY()));
+                    }
+                    representation[c.getX()][c.getY()].setUser(gamer);
                 }
-                representation[c.getX()][c.getY()].setUser(gamer);
+                if (isGrow) gamer.getSnake().grow();
+                isGrow = false;
+            } else {
+                for (Coordinates c : gamer.getSnake()) {
+                    Random random = new Random(System.currentTimeMillis());
+                    int value = random.nextInt(101);
+                    if (value < gameConfig.getDeadFoodProb() * 100) {
+                        foods.add(new Coordinates(c.getX(), c.getY()));
+                        representation[c.getX()][c.getY()].setFood();
+                    }
+                }
+                gamer.getSnake().die();
             }
-            if (isGrow) gamer.getSnake().grow();
-            isGrow = false;
         }
 
-        if (foods.size() < gameConfig.getFoodStatic()){
+        if (foods.size() < gameConfig.getFoodStatic() + (int)(gameConfig.getFoodPerPlayer()  * activeGamers.size())){
             Coordinates newFoods = Coordinates.getRandomCoordinates(gameConfig.getWidth(), gameConfig.getHeight());
             while (!representation[newFoods.getX()][newFoods.getY()].isEmpty())
                 newFoods = Coordinates.getRandomCoordinates(gameConfig.getWidth(), gameConfig.getHeight());

@@ -65,10 +65,11 @@ public class Snake implements Iterable<Coordinates> {
             }
         }
 
-        if (!isAlive){
-            this.start = null;
-            this.finish = null;
-        }
+    }
+
+    public void die(){
+        this.start = null;
+        this.finish = null;
     }
 
     public Snake(Gamer gamer, int width, int height) {
