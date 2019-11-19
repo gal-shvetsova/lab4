@@ -1,11 +1,11 @@
 package fit.networks.game;
 
-import fit.networks.game.snake.Coordinates;
 import fit.networks.protocol.ProtoMaker;
 import fit.networks.protocol.Protocol;
 import fit.networks.protocol.SnakesProto;
 import fit.networks.game.snake.Snake;
 
+import java.awt.*;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
@@ -19,8 +19,7 @@ public class Game {
     private ArrayList<Gamer> activeGamers = new ArrayList<>();
     private ArrayList<Gamer> activeGamersPerCycle = new ArrayList<>();
     private ProtoMaker protoMaker = new ProtoMaker();
-
-
+    private ArrayList<Coordinates> foods = new ArrayList<>();
 
     public class PingSender extends TimerTask {
         @Override
@@ -88,7 +87,7 @@ public class Game {
 
     public void start(){
         Timer timer = new Timer();
-
+        foods.add(new Coordinates(1,1));
         timer.schedule(new PingSender(), 0, 100);
 
     }
@@ -99,11 +98,25 @@ public class Game {
             for (int j = 0; j < gameConfig.getHeight(); j++)
                 representation[i][j] = new Cell();
         }
+
+        for (Coordinates food : foods){
+            representation[food.getX()][food.getY()].setValue(1); //todo: make set food
+            representation[food.getX()][food.getY()].setColor(Color.RED);
+        }
+
+        boolean isGrow = false;
+
         for (Gamer gamer: activeGamers) {
             for (Coordinates c : gamer.getSnake()) {
+                if (representation[c.getX()][c.getY()].getValue() == 1) {
+                    isGrow = true;
+                    foods.remove(new Coordinates(c.getX(), c.getY()));
+                }
                 representation[c.getX()][c.getY()].setValue(gamer.getId());
                 representation[c.getX()][c.getY()].setColor(gamer.getColor());
             }
+            if (isGrow) gamer.getSnake().grow();
+            isGrow = false;
         }
         return representation;
     }

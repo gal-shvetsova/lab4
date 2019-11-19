@@ -1,10 +1,10 @@
-package fit.networks.game.snake;
+package fit.networks.game;
 
 public class Coordinates {
     private int x;
     private int y;
 
-    Coordinates(int x, int y) {
+    public Coordinates(int x, int y) {
         this.x = x;
         this.y = y;
     }
@@ -34,4 +34,10 @@ public class Coordinates {
         this.x = x;
         this.y = y;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return x == ((Coordinates)obj).getX() && y == ((Coordinates)obj).getY();
+    }
+
 }

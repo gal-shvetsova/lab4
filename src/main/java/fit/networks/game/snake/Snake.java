@@ -1,5 +1,6 @@
 package fit.networks.game.snake;
 
+import fit.networks.game.Coordinates;
 import fit.networks.game.Gamer;
 import java.util.Iterator;
 
@@ -11,7 +12,7 @@ public class Snake implements Iterable<Coordinates> {
     private Node finish;
     private Direction direction;
     private boolean isAlive;
-
+    private boolean isGrowing = false;
 
     private class SnakeIterator implements Iterator<Coordinates> {
         private Node current = start;
@@ -45,13 +46,13 @@ public class Snake implements Iterable<Coordinates> {
                 break;
             }
             case DOWN: {
-                if (start.coordinates.getY() + 1 <= height)
+                if (start.coordinates.getY() + 1 < height)
                     move(new Node(start.coordinates.getX(), start.coordinates.getY() + 1));
                 else isAlive = false;
                 break;
             }
             case RIGHT: {
-                if (start.coordinates.getX() + 1 <= width)
+                if (start.coordinates.getX() + 1 < width)
                     move(new Node(start.coordinates.getX() + 1, start.coordinates.getY()));
                 else isAlive = false;
                 break;
@@ -86,9 +87,16 @@ public class Snake implements Iterable<Coordinates> {
         start.prev = newStart;
         newStart.next = start;
         newStart.prev = null;
-        finish.prev.next = null;
-        finish = finish.prev;
+        if (!isGrowing) {
+            finish.prev.next = null;
+            finish = finish.prev;
+        }
+        else isGrowing = false;
         start = newStart;
+    }
+
+    public void grow(){
+        isGrowing = true;
     }
 
     public Gamer getGamer() {

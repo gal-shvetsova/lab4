@@ -1,6 +1,6 @@
 package fit.networks.protocol;
 
-import fit.networks.game.snake.Coordinates;
+import fit.networks.game.Coordinates;
 import fit.networks.game.snake.Snake;
 
 import java.util.concurrent.atomic.AtomicInteger;
