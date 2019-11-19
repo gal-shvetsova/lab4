@@ -1,13 +1,11 @@
 package fit.networks.game.snake;
 
 import fit.networks.game.Gamer;
-
 import java.util.Iterator;
-import java.util.TimerTask;
 
 public class Snake implements Iterable<Coordinates> {
     private final int width;
-    private final int heihgt;
+    private final int height;
     private final Gamer gamer;
     private Node start;
     private Node finish;
@@ -47,7 +45,7 @@ public class Snake implements Iterable<Coordinates> {
                 break;
             }
             case DOWN: {
-                if (start.coordinates.getY() + 1 <= heihgt)
+                if (start.coordinates.getY() + 1 <= height)
                     move(new Node(start.coordinates.getX(), start.coordinates.getY() + 1));
                 else isAlive = false;
                 break;
@@ -70,7 +68,7 @@ public class Snake implements Iterable<Coordinates> {
     public Snake(Gamer gamer, int width, int height) {
         this.gamer = gamer;
         this.width = width;
-        this.heihgt = height;
+        this.height = height;
         this.isAlive = true;
     }
 
@@ -109,20 +107,34 @@ public class Snake implements Iterable<Coordinates> {
         start.prev = null;
         finish.prev = start;
         finish.next = null;
-        direction = Direction.LEFT;//Direction.getRandomDirection();
+        direction = Direction.getRandomDirection();
     }
 
     public void randomStart() {
         int x = (int) (Math.random() * width);
-        int y = (int) (Math.random() * heihgt);
-        System.out.println("x " + x + " y" + y); //todo make it by direction
+        int y = (int) (Math.random() * height);
+        System.out.println("x " + x + " y" + y);
         start = new Node(x, y);
-        finish = new Node(x - 1 > 0 ? x - 1 : x + 1, y);
         start.next = finish;
         start.prev = null;
+        direction = Direction.getRandomDirection();
+        switch (direction) {
+            case LEFT:
+                finish = new Node(x + 1, y);
+                break;
+            case DOWN:
+                finish = new Node(x, y + 1);
+                break;
+            case RIGHT:
+                finish = new Node(x - 1, y);
+                break;
+            case UP:
+                finish = new Node(x, y - 1);
+                break;
+        }
         finish.prev = start;
         finish.next = null;
-        direction = Direction.RIGHT;//Direction.getRandomDirection();
+
     }
 
 

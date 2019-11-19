@@ -62,12 +62,9 @@ public class Game {
         }
     }
 */
-
-   //todo: function of getting unique id
-
     public void startNewGame(String name, InetAddress inetAddress, int port, int width, int height, int foodStatic,
                              float foodPerPlayer, int delayMs, float deadFoodProb) throws Exception{
-        gamer = new Gamer(name, inetAddress, port, 0, true);
+        gamer = new Gamer(name, inetAddress, port, 20, true);
         Snake snake = new Snake(gamer, width, height);
 
         snake.randomStart();
@@ -96,28 +93,19 @@ public class Game {
 
     }
 
-    public Integer[] makeXRepresentation(){
-        Integer[] x = new Integer[gameConfig.getWidth()];
-        for (int i = 0; i < gameConfig.getWidth(); i++)
-            x[i] = 0;
+    public Cell[][] makeRepresentation(){
+        Cell[][] representation = new Cell[gameConfig.getWidth()][gameConfig.getHeight()];
+        for (int i = 0; i < gameConfig.getWidth(); i++){
+            for (int j = 0; j < gameConfig.getHeight(); j++)
+                representation[i][j] = new Cell();
+        }
         for (Gamer gamer: activeGamers) {
             for (Coordinates c : gamer.getSnake()) {
-                x[c.getX()] = 1;
+                representation[c.getX()][c.getY()].setValue(gamer.getId());
+                representation[c.getX()][c.getY()].setColor(gamer.getColor());
             }
         }
-        return x;
-    }
-
-    public Integer[] makeYRepresentation(){
-        Integer[] y = new Integer[gameConfig.getHeight()];
-        for (int i = 0; i < gameConfig.getHeight(); i++)
-            y[i] = 0;
-        for (Gamer gamer: activeGamers) {
-            for (Coordinates c : gamer.getSnake()) {
-                y[c.getY()] = 1;
-            }
-        }
-        return y;
+        return representation;
     }
 
     public void addAliveGamer(InetAddress inetAddress, int port) {

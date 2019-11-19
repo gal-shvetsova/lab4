@@ -1,6 +1,7 @@
 package fit.networks.gui;
 
 import fit.networks.controller.SnakeSwingController;
+import fit.networks.game.Cell;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,8 +17,9 @@ public class GameBoard extends JPanel implements ActionListener {
     private final int DOTSIZE;
     private final int ALLDOTS;
 
-    private Integer x[] = null;
-    private Integer y[] = null;
+    private Cell[][] field = null;
+    private Integer[] x = null;
+    private Integer[] y = null;
     private SnakeSwingController controller;
 
 
@@ -26,37 +28,36 @@ public class GameBoard extends JPanel implements ActionListener {
         ALLDOTS = width * height;
         WIDTH = width * DOTSIZE;
         HEIGHT = height * DOTSIZE;
-        x = new Integer[width];
-        y = new Integer[height];
-        for (int i = 0; i < width; i++) x[i] = 0;
-        for (int i = 0; i < height; i++) y[i] = 0;
+        field = new Cell[width][height];
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++)
+                field[i][j] = new Cell();
+        }
         this.controller = controller;
-        setBackground(Color.black);
+        setBackground(Color.BLACK);
         setFocusable(true);
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setMinimumSize(new Dimension(WIDTH, HEIGHT));
 
     }
 
-    public void doDrawing(Integer[] x, Integer[] y) {
-        this.x = x;
-        this.y = y;
+    public void doDrawing(Cell[][] field) {
+        this.field = field;
         repaint();
     }
 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        g.setColor(Color.RED);
-        if (x == null || y == null) return;
-        for (int i = 0; i < x.length; i++) {
-            for (int j = 0; j < y.length; j++)
-                if (x[i] != 0 && y[j] != 0)
+        if (field == null) return;
+        for (int i = 0; i < field.length; i++) {
+            for (int j = 0; j < field[i].length; j++)
+                if (field[i][j].getValue() != 0) {
+                    g.setColor(field[i][j].getColor());
                     g.drawRect(i * DOTSIZE, j * DOTSIZE, DOTSIZE, DOTSIZE);
+                }
         }
-
         Toolkit.getDefaultToolkit().sync();
-
     }
 
 

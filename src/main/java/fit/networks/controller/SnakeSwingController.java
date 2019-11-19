@@ -60,9 +60,9 @@ public class SnakeSwingController extends SnakeController {
         @Override
         public void run() {
 
-            if (game != null) {
+            if (game != null && game.getGamer() != null && game.getGamer().getSnake() != null) {
                 game.getGamer().getSnake().run();
-                snakeGUI.loadNewField(game.makeXRepresentation(), game.makeYRepresentation());
+                snakeGUI.loadNewField(game.makeRepresentation());
             }
         }
     }

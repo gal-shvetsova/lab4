@@ -1,6 +1,7 @@
 package fit.networks.gui;
 
 import fit.networks.controller.SnakeSwingController;
+import fit.networks.game.Cell;
 import fit.networks.gui.protocol.Protocol;
 
 import javax.swing.*;
@@ -176,11 +177,9 @@ public class SnakeGUI extends JFrame {
         initMain();
     }
 
-    public void loadNewField(Integer[] x, Integer[] y){
+    public void loadNewField(Cell[][] field){
         if(gameBoard != null)
-            gameBoard.doDrawing(x, y);
-     //   this.pack();
-       // this.repaint();
+            gameBoard.doDrawing(field);
     }
 
     public void startGame(int width, int height, int foodStatic, float foodPerPlayer, int delayMs,
@@ -194,7 +193,6 @@ public class SnakeGUI extends JFrame {
         c.gridx = 0;
         c.weightx = 1;
         c.weighty = 1;
-      //  gameBoard.setSize(gameBoard.);
         gamePanel.add(gameBoard);
         this.pack();
         this.repaint();
