@@ -100,23 +100,28 @@ public class Game {
         }
 
         for (Coordinates food : foods){
-            representation[food.getX()][food.getY()].setValue(1); //todo: make set food
-            representation[food.getX()][food.getY()].setColor(Color.RED);
+            representation[food.getX()][food.getY()].setFood(); //todo: make set food;
         }
 
         boolean isGrow = false;
 
         for (Gamer gamer: activeGamers) {
             for (Coordinates c : gamer.getSnake()) {
-                if (representation[c.getX()][c.getY()].getValue() == 1) {
+                if (representation[c.getX()][c.getY()].isFood()) {
                     isGrow = true;
                     foods.remove(new Coordinates(c.getX(), c.getY()));
                 }
-                representation[c.getX()][c.getY()].setValue(gamer.getId());
-                representation[c.getX()][c.getY()].setColor(gamer.getColor());
+                representation[c.getX()][c.getY()].setUser(gamer);
             }
             if (isGrow) gamer.getSnake().grow();
             isGrow = false;
+        }
+
+        if (foods.size() < gameConfig.getFoodStatic()){
+            Coordinates newFoods = Coordinates.getRandomCoordinates(gameConfig.getWidth(), gameConfig.getHeight());
+            while (!representation[newFoods.getX()][newFoods.getY()].isEmpty())
+                newFoods = Coordinates.getRandomCoordinates(gameConfig.getWidth(), gameConfig.getHeight());
+            foods.add(newFoods);
         }
         return representation;
     }

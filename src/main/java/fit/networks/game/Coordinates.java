@@ -1,5 +1,7 @@
 package fit.networks.game;
 
+import java.util.Random;
+
 public class Coordinates {
     private int x;
     private int y;
@@ -33,6 +35,14 @@ public class Coordinates {
     public void setCoordinates(int x, int y){
         this.x = x;
         this.y = y;
+    }
+
+    public static Coordinates getRandomCoordinates(int maxX, int maxY){
+        Random random = new Random(System.currentTimeMillis());
+        int x = random.nextInt(maxX);
+        int y = random.nextInt(maxY);
+        return new Coordinates(x, y);
+
     }
 
     @Override
