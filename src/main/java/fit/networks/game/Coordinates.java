@@ -1,5 +1,8 @@
 package fit.networks.game;
 
+import fit.networks.game.snake.Direction;
+import fit.networks.protocol.SnakesProto;
+
 import java.util.Random;
 
 public class Coordinates {
@@ -38,11 +41,26 @@ public class Coordinates {
     }
 
     public static Coordinates getRandomCoordinates(int maxX, int maxY){
-        Random random = new Random(System.currentTimeMillis());
+        Random random = new Random();
         int x = random.nextInt(maxX);
         int y = random.nextInt(maxY);
         return new Coordinates(x, y);
 
+    }
+
+    public Coordinates move(Direction direction) {
+        switch (direction) {
+            case UP:
+                return new Coordinates(this.x, this.y - 1);
+            case DOWN:
+                return new Coordinates(this.x, this.y + 1);
+            case LEFT:
+                return new Coordinates(this.x - 1, this.y);
+            case RIGHT:
+                return new Coordinates(this.x + 1, this.y);
+            default:
+                throw new IllegalArgumentException("Unrecognized direction type" + direction);
+        }
     }
 
     @Override

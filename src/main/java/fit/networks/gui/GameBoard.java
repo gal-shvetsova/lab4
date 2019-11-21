@@ -1,14 +1,12 @@
 package fit.networks.gui;
 
 import fit.networks.controller.SnakeSwingController;
-import fit.networks.game.Cell;
+import fit.networks.game.gamefield.Field;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 
 public class GameBoard extends JPanel implements ActionListener {
 
@@ -17,9 +15,7 @@ public class GameBoard extends JPanel implements ActionListener {
     private final int DOTSIZE;
     private final int ALLDOTS;
 
-    private Cell[][] field = null;
-    private Integer[] x = null;
-    private Integer[] y = null;
+    private Field field = null;
     private SnakeSwingController controller;
 
 
@@ -28,11 +24,6 @@ public class GameBoard extends JPanel implements ActionListener {
         ALLDOTS = width * height;
         WIDTH = width * DOTSIZE;
         HEIGHT = height * DOTSIZE;
-        field = new Cell[width][height];
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < height; j++)
-                field[i][j] = new Cell();
-        }
         this.controller = controller;
         setBackground(Color.WHITE);
      //   setFocusable(true);
@@ -41,7 +32,7 @@ public class GameBoard extends JPanel implements ActionListener {
 
     }
 
-    public void doDrawing(Cell[][] field) {
+    public void doDrawing(Field field) {
         this.field = field;
         repaint();
     }
@@ -50,10 +41,10 @@ public class GameBoard extends JPanel implements ActionListener {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         if (field == null) return;
-        for (int i = 0; i < field.length; i++) {
-            for (int j = 0; j < field[i].length; j++)
-                if (!field[i][j].isEmpty()) {
-                    g.setColor(field[i][j].getColor());
+        for (int i = 0; i < field.getWidth(); i++) {
+            for (int j = 0; j < field.getHeight(); j++)
+                if (!field.isEmpty(i, j)) {
+                    g.setColor(field.getColor(i, j));
                     g.fillRect(i * DOTSIZE, j * DOTSIZE, DOTSIZE, DOTSIZE);
                 }
         }

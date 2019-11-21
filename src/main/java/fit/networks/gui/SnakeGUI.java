@@ -1,16 +1,15 @@
 package fit.networks.gui;
 
 import fit.networks.controller.SnakeSwingController;
-import fit.networks.game.Cell;
+import fit.networks.game.gamefield.Field;
+import fit.networks.game.GameConfig;
 import fit.networks.gui.protocol.Protocol;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.net.InetAddress;
 
 public class SnakeGUI extends JFrame {
 
@@ -31,6 +30,7 @@ public class SnakeGUI extends JFrame {
     private JPanel currentGameInfoPanel = new JPanel();
     private GameBoard gameBoard = null;
     private SnakeSwingController controller;
+    private GameConfig gameConfig;
 
     private class NewGameForm extends JFrame {
         private JTextField width = new JTextField(10);
@@ -41,12 +41,13 @@ public class SnakeGUI extends JFrame {
         private JTextField deadFoodProb = new JTextField(10);
         private JButton okButton = new JButton(new NewGameAction());
         private JButton cancelButton = new JButton(new NewGameAction());
+
         //TODO: add validation
-        public NewGameForm(){
+        public NewGameForm() {
             super("New game");
             setSize(512, 512);
             Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-            setLocation(dim.width/2-this.getSize().width/2, dim.height/2-this.getSize().height/2);
+            setLocation(dim.width / 2 - this.getSize().width / 2, dim.height / 2 - this.getSize().height / 2);
             setLayout(new BorderLayout());
             JPanel pane = new JPanel(new GridBagLayout());
             setContentPane(pane);
@@ -77,29 +78,46 @@ public class SnakeGUI extends JFrame {
             cancelButton.setName(Protocol.getCancelButtonName());
 
             add(okButton, c);
-            add(cancelButton,c);
+            add(cancelButton, c);
         }
 
 
         class NewGameAction extends AbstractAction {
             private static final long serialVersionUID = 1L;
 
+            private void performDataAndStartGame() {
+                int parsedWidth, parsedHeight, parsedFoodStatic, parsedDelay;
+                float parsedFoodPerPlayer, parsedDeadFoodProb;
+                try {
+                    parsedWidth = Integer.parseInt(width.getText());
+                    parsedHeight = Integer.parseInt(height.getText());
+                    parsedFoodStatic = Integer.parseInt(foodStatic.getText());
+                    parsedDelay = Integer.parseInt(delayMs.getText());
+
+                    parsedFoodPerPlayer = Float.parseFloat(foodPerPlayer.getText());
+                    parsedDeadFoodProb = Float.parseFloat(deadFoodProb.getText());
+                    gameConfig = new GameConfig(parsedWidth, parsedHeight, parsedFoodStatic, parsedFoodPerPlayer, parsedDelay,
+                            parsedDeadFoodProb);
+                    controller.startNewGame(gameConfig);
+                    startGame();
+                } catch (NumberFormatException ex) {
+                    System.out.println("err");
+                } catch (IllegalArgumentException argEx) {
+                    System.out.println("arg err");
+                    argEx.printStackTrace();
+                }
+            }
+
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 JButton btn = (JButton) actionEvent.getSource();
                 System.out.println("Нажатие на кнопку <" + btn.getName() + ">");
-                if (btn == cancelButton){
+                if (btn == cancelButton) {
                     setVisible(false);
                     return;
                 }
-                if (btn == okButton){
-                    try {
-                        controller.startNewGame(width.getText(), height.getText(), foodStatic.getText(),
-                                foodPerPlayer.getText(), delayMs.getText(), deadFoodProb.getText());
-                    } catch (Exception ex){
-                        ex.printStackTrace();
-                        return;
-                    }
+                if (btn == okButton) {
+                    performDataAndStartGame();
                     setVisible(false);
 
                 }
@@ -159,6 +177,8 @@ public class SnakeGUI extends JFrame {
 
         infoPanel.add(new JScrollPane(allGamesTable), c);
 
+        hideGameInfo();
+
     }
 
     private void initMain() {
@@ -177,16 +197,11 @@ public class SnakeGUI extends JFrame {
 
         @Override
         public void keyPressed(KeyEvent e) {
-            System.out.println("get");
             int key = e.getKeyCode();
             controller.keyActivity(key);
         }
-
-        @Override
-        public void keyReleased(KeyEvent e) {
-            System.out.println("rel");
-        }
     }
+
     public SnakeGUI(SnakeSwingController controller) {
         super("Snake");
         this.controller = controller;
@@ -196,24 +211,50 @@ public class SnakeGUI extends JFrame {
 
     }
 
-    public void loadNewField(Cell[][] field){
-        if(gameBoard != null)
+    public void loadNewField(Field field) {
+        if (gameBoard != null)
             gameBoard.doDrawing(field);
     }
 
-    public void startGame(int width, int height, int foodStatic, float foodPerPlayer, int delayMs,
-                          float deadFoodProb){
+    private void setGameInfo(){
+        leadingValueLabel.setText(controller.getName());
+        foodValueLabel.setText(gameConfig.getFoodStatic() + " + " + gameConfig.getFoodPerPlayer() + "x");
+        sizeValueLabel.setText(gameConfig.getWidth() + " * " + gameConfig.getHeight());
+
+        leadingValueLabel.setVisible(true);
+        foodValueLabel.setVisible(true);
+        sizeValueLabel.setVisible(true);
+    }
+
+    private void hideGameInfo(){
+        leadingValueLabel.setVisible(false);
+        foodValueLabel.setVisible(false);
+        sizeValueLabel.setVisible(false);
+    }
+
+    public void startGame() {
         Dimension dim = gamePanel.getSize();
-        double dotSize = Math.floor(Math.sqrt(dim.width * dim.height / width / height));
-        gameBoard = new GameBoard(width, height, (int)dotSize, controller);
+        double dotSize = Math.floor(Math.sqrt(dim.width * dim.height / gameConfig.getWidth() / gameConfig.getHeight()));
+        gameBoard = new GameBoard(gameConfig.getWidth(), gameConfig.getHeight(), (int) dotSize, controller);
         gamePanel.setLayout(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
+        setGameInfo();
         c.gridy = 0;
         c.gridx = 0;
         c.weightx = 1;
         c.weighty = 1;
         gamePanel.add(gameBoard);
         gamePanel.requestFocus();
+        this.pack();
+        this.repaint();
+    }
+
+    public void endGame(){
+        gamePanel.removeAll();
+        gameBoard = null;
+        newGameButton.setEnabled(true);
+        leaveGameButton.setEnabled(false);
+        hideGameInfo();
         this.pack();
         this.repaint();
     }
@@ -229,12 +270,12 @@ public class SnakeGUI extends JFrame {
         public void actionPerformed(ActionEvent actionEvent) {
             JButton btn = (JButton) actionEvent.getSource();
             System.out.println("Нажатие на кнопку <" + btn.getName() + ">");
-            if (btn == newGameButton){
+            if (btn == newGameButton) {
                 NewGameForm newGameForm = new NewGameForm();
                 newGameForm.setVisible(true);
                 leaveGameButton.setEnabled(true);
                 newGameButton.setEnabled(false);
-            } else if (btn == leaveGameButton){
+            } else if (btn == leaveGameButton) {
                 controller.leaveGame();
                 newGameButton.setEnabled(true);
                 leaveGameButton.setEnabled(false);

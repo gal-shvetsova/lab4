@@ -1,4 +1,6 @@
-package fit.networks.game;
+package fit.networks.game.gamefield;
+
+import fit.networks.gamer.Gamer;
 
 import java.awt.*;
 
@@ -6,7 +8,7 @@ public class Cell {
     private int value;
     private Color color;
     private static final  Color FOOD_COLOR = Color.red;
-    private static final Color NONE_COLOR = Color.black;
+    private static final Color NONE_COLOR = Color.white;
     private static final int FOOD_VALUE = 1;
     private static final int NONE_VALUE = 0;
 

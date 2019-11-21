@@ -1,10 +1,12 @@
 package fit.networks.game.snake;
 
+import fit.networks.protocol.SnakesProto;
+
 public enum Direction {
-    LEFT(1),
-    RIGHT(2),
-    UP(3),
-    DOWN(4);
+    UP(1),
+    DOWN(2),
+    LEFT(3),
+    RIGHT(4);
 
     private final int index;
 
@@ -18,14 +20,33 @@ public enum Direction {
 
     public static Direction directionOf(int index){
         switch (index){
-            case 1: return LEFT;
-            case 2: return RIGHT;
-            case 3: return UP;
-            case 4: return DOWN;
+            case 1: return UP;
+            case 2: return DOWN;
+            case 3: return LEFT;
+            case 4: return RIGHT;
         }
         return null;
     }
 
+    public static Direction directionOf(SnakesProto.Direction direction){
+        switch (direction.getNumber()){
+            case 1: return UP;
+            case 2: return DOWN;
+            case 3: return LEFT;
+            case 4: return RIGHT;
+        }
+        return null;
+    }
+
+    public SnakesProto.Direction makeProtoDirection(){
+        switch (getValue()){
+            case 1: return SnakesProto.Direction.UP;
+            case 2: return SnakesProto.Direction.DOWN;
+            case 3: return SnakesProto.Direction.LEFT;
+            case 4: return SnakesProto.Direction.RIGHT;
+        }
+        return null;
+    }
 
     public static Direction getDirection(int x, int y){
         switch (x){

@@ -1,5 +1,6 @@
 package fit.networks.protocol;
 
+import java.awt.*;
 import java.net.InetAddress;
 
 public class Protocol {

@@ -1,54 +1,67 @@
 package fit.networks.game;
 
-class GameConfig {
+public class GameConfig {
 
-    private int width;           // Ширина поля в клетках (от 10 до 100)
-    private int height;          // Высота поля в клетках (от 10 до 100)
+    private Coordinates maxCoordinates;        // Высота поля в клетках (от 10 до 100)
+
     private int foodStatic;      // Количество клеток с едой, независимо от числа игроков (от 0 до 100)
     private double foodPerPlayer;  // Количество клеток с едой, на каждого игрока (вещественный коэффициент от 0 до 100)
     private int delayMs;      // Задержка между ходами (сменой состояний) в игре, в миллисекундах
     private double deadFoodProb; // Вероятность превращения мёртвой клетки в еду (от 0 до 1).
 
+    public GameConfig(int width, int height, int foodStatic, double foodPerPlayer, int delayMs, double deadFoodProb)
+            throws IllegalArgumentException{
+        maxCoordinates = new Coordinates();
+        setWidth(width);
+        setHeight(height);
+        setFoodStatic(foodStatic);
+        setFoodPerPlayer(foodPerPlayer);
+        setDelayMs(delayMs);
+        setDeadFoodProb(deadFoodProb);
+    }
 
     public GameConfig() {
-        width = 40;
-        height = 30;
-        foodStatic = 1;
-        foodPerPlayer = 1;
-        delayMs = 1000;
-        deadFoodProb = 0.1;
+        this.maxCoordinates = new Coordinates(40, 30);
+        this.foodStatic = 1;
+        this.foodPerPlayer = 1;
+        this.delayMs = 1000;
+        this.deadFoodProb = 0.1;
     }
 
+
+    public Coordinates getMaxCoordinates() {
+        return maxCoordinates;
+    }
 
     public int getWidth() {
-        return width;
+        return maxCoordinates.getX();
     }
 
-    public void setWidth(int width) throws Exception {
+    public void setWidth(int width) throws IllegalArgumentException {
         if (width < 10 || width > 100)
-            throw new Exception("Incorrect width [" + width + "]. " +
+            throw new IllegalArgumentException("Incorrect width [" + width + "]. " +
                     "Width should be between 10 and 100");
-        this.width = width;
+        this.maxCoordinates.setX(width);
     }
 
     public int getHeight() {
-        return height;
+        return maxCoordinates.getY();
     }
 
-    public void setHeight(int height) throws Exception{
+    public void setHeight(int height) throws IllegalArgumentException{
         if (height < 10 || height > 100)
-            throw new Exception("Incorrect height [" + height + "]. " +
+            throw new IllegalArgumentException("Incorrect height [" + height + "]. " +
                     "Height should be between 10 and 100");
-        this.height = height;
+        this.maxCoordinates.setY(height);
     }
 
     public int getFoodStatic() {
         return foodStatic;
     }
 
-    public void setFoodStatic(int foodStatic) throws Exception {
+    public void setFoodStatic(int foodStatic) throws IllegalArgumentException {
         if (foodStatic < 10 || foodStatic > 100)
-            throw new Exception("Incorrect food static value [" + foodStatic + "]. " +
+            throw new IllegalArgumentException("Incorrect food static value [" + foodStatic + "]. " +
                     "Food static value should be between 10 and 100");
         this.foodStatic = foodStatic;
     }
@@ -57,9 +70,9 @@ class GameConfig {
         return foodPerPlayer;
     }
 
-    public void setFoodPerPlayer(double foodPerPlayer) throws Exception{
+    public void setFoodPerPlayer(double foodPerPlayer) throws IllegalArgumentException{
         if (foodPerPlayer < 0 || foodPerPlayer > 100)
-            throw new Exception("Incorrect food per player value [" + foodPerPlayer + "]. " +
+            throw new IllegalArgumentException("Incorrect food per player value [" + foodPerPlayer + "]. " +
                     "Food per player value should be between 10 and 100");
         this.foodPerPlayer = foodPerPlayer;
     }
@@ -68,9 +81,9 @@ class GameConfig {
         return delayMs;
     }
 
-    public void setDelayMs(int delayMs) throws Exception{
+    public void setDelayMs(int delayMs) throws IllegalArgumentException{
         if (delayMs < 0)
-            throw new Exception("Incorrect delay value [" + delayMs + "]. " +
+            throw new IllegalArgumentException("Incorrect delay value [" + delayMs + "]. " +
                     "Delay value should be positive");
         this.delayMs = delayMs;
     }
@@ -79,9 +92,9 @@ class GameConfig {
         return deadFoodProb;
     }
 
-    public void setDeadFoodProb(double deadFoodProb) throws Exception{
+    public void setDeadFoodProb(double deadFoodProb) throws IllegalArgumentException{
         if (deadFoodProb < 0 || deadFoodProb > 1)
-            throw new Exception("Incorrect dead food prob value [" + deadFoodProb + "]. " +
+            throw new IllegalArgumentException("Incorrect dead food prob value [" + deadFoodProb + "]. " +
                     "Dead food prob value should be between 0 and 1");
         this.deadFoodProb = deadFoodProb;
     }

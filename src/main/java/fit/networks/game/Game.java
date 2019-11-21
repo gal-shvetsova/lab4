@@ -1,145 +1,63 @@
 package fit.networks.game;
 
-import fit.networks.protocol.ProtoMaker;
-import fit.networks.protocol.Protocol;
-import fit.networks.protocol.SnakesProto;
-import fit.networks.game.snake.Snake;
+import fit.networks.game.gamefield.Field;
+import fit.networks.gamer.Gamer;
 
-import java.awt.*;
-import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
 import java.util.ArrayList;
-import java.util.Random;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class Game {  // создается только у мастера, сделать создание из предыдущей игры
-    private GameConfig gameConfig = new GameConfig();
-    private Gamer gamer; //это мастер
+
+    private GameConfig gameConfig;
     private ArrayList<Gamer> activeGamers = new ArrayList<>();
     private ArrayList<Gamer> activeGamersPerCycle = new ArrayList<>();
-    private ProtoMaker protoMaker = new ProtoMaker();
     private ArrayList<Coordinates> foods = new ArrayList<>();
 
 
-    public class PingSender extends TimerTask {
-        @Override
-        public void run() {
-            try(MulticastSocket socket = new MulticastSocket(Protocol.getMulticastPort())){
-                SnakesProto.GameMessage message = protoMaker.makePingMessage();
-                byte [] messageByte = message.toByteArray();
-                InetAddress inetAddress = InetAddress.getByName(Protocol.getMulticastAddressName());
-                socket.joinGroup(inetAddress);
-                DatagramPacket packet = new DatagramPacket(messageByte, messageByte.length, inetAddress, Protocol.getMulticastPort());
-                socket.send(packet);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        }
+    public Game(GameConfig gameConfig) {
+        this.gameConfig = gameConfig;
+
     }
 
-
-   /* public class AnnouncementSender extends TimerTask {
-        private SnakesProto.GameMessage.AnnouncementMsg makeAnnouncementMessage(){
-            SnakesProto.GameMessage.AnnouncementMsg.Builder announcementMessage = SnakesProto.GameMessage.AnnouncementMsg.newBuilder();
-            SnakesProto.GamePlayers
-        }
-        @Override
-        public void run() {
-            try(MulticastSocket socket = new MulticastSocket(Protocol.getMulticastPort())){
-                SnakesProto.GameMessage.Builder message = SnakesProto.GameMessage.newBuilder();
-
-                message.setMsgSeq(messageSeq.getAndAdd(1));
-                message.setPing(pingMessage.build());
-                byte [] messageByte = message.build().toByteArray();
-                InetAddress inetAddress = InetAddress.getByName(Protocol.getMulticastAddressName());
-                socket.joinGroup(inetAddress);
-                DatagramPacket packet = new DatagramPacket(messageByte, messageByte.length, inetAddress, Protocol.getMulticastPort());
-                socket.send(packet);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        }
+    public ArrayList<Gamer> getActiveGamers() {
+        return activeGamers;
     }
-*/
-    public void startNewGame(String name, InetAddress inetAddress, int port, int width, int height, int foodStatic,
-                             float foodPerPlayer, int delayMs, float deadFoodProb) throws Exception{
-        gamer = new Gamer(name, inetAddress, port, 20, true);
-        Snake snake = new Snake(gamer, width, height);
-        snake.randomStart();
-        gamer.setSnake(snake);
+
+    public GameConfig getGameConfig() {
+        return gameConfig;
+    }
+
+    public void addGamer(Gamer gamer) {
         activeGamers.add(gamer);
-        gameConfig.setWidth(width);
-        gameConfig.setHeight(height);
-        gameConfig.setFoodStatic(foodStatic);
-        gameConfig.setFoodPerPlayer(foodPerPlayer);
-        gameConfig.setDelayMs(delayMs);
-        gameConfig.setDeadFoodProb(deadFoodProb);
     }
 
-    public Gamer getGamer(){
-        return gamer;
-    }
-
-    public void moveSnake(int x, int y){
-        gamer.getSnake().changeDirection(x,y);
-    }
-
-    public void start(){
-        Timer timer = new Timer();
-        foods.add(new Coordinates(1,1));
-        timer.schedule(new PingSender(), 0, 100);
-
-    }
-
-    public Cell[][] makeRepresentation(){
-        Cell[][] representation = new Cell[gameConfig.getWidth()][gameConfig.getHeight()];
-        for (int i = 0; i < gameConfig.getWidth(); i++){
-            for (int j = 0; j < gameConfig.getHeight(); j++)
-                representation[i][j] = new Cell();
+    public boolean hasAliveGamers(){
+        for (Gamer gamer : activeGamers){
+            if (!gamer.isZombie()) return true;
         }
+        return false;
+    }
 
-        for (Coordinates food : foods){
-            representation[food.getX()][food.getY()].setFood();
-        }
+    public Field makeRepresentation() {
+        Field field = new Field(gameConfig.getMaxCoordinates());
+        int neededFoods = gameConfig.getFoodStatic() + (int) (gameConfig.getFoodPerPlayer() * activeGamers.size());
+        field.addFoods(foods);
 
-        boolean isGrow = false;
-
-        for (Gamer gamer: activeGamers) {
-            if (gamer.getSnake().isAlive()) {
-                for (Coordinates c : gamer.getSnake()) {
-                    if (representation[c.getX()][c.getY()].isFood()) {
-                        isGrow = true;
-                        foods.remove(new Coordinates(c.getX(), c.getY()));
-                    }
-                    representation[c.getX()][c.getY()].setUser(gamer);
+        for (Gamer gamer : activeGamers) {
+            switch (field.addGamerSnake(gamer)) {
+                case DIE: {
+                    foods.addAll(field.getFoodsAfterDie(gamer, gameConfig.getDeadFoodProb()));
+                    gamer.becomeZombie();
+                    break;
                 }
-                if (isGrow) gamer.getSnake().grow();
-                isGrow = false;
-            } else {
-                for (Coordinates c : gamer.getSnake()) {
-                    Random random = new Random(System.currentTimeMillis());
-                    int value = random.nextInt(101);
-                    if (value < gameConfig.getDeadFoodProb() * 100) {
-                        foods.add(new Coordinates(c.getX(), c.getY()));
-                        representation[c.getX()][c.getY()].setFood();
-                    }
+                case GROW: {
+                    foods.remove(gamer.getSnakeHeadCoordinates());
+                    gamer.getSnake().grow();
+                    break;
                 }
-                gamer.getSnake().die();
             }
         }
 
-        if (foods.size() < gameConfig.getFoodStatic() + (int)(gameConfig.getFoodPerPlayer()  * activeGamers.size())){
-            Coordinates newFoods = Coordinates.getRandomCoordinates(gameConfig.getWidth(), gameConfig.getHeight());
-            while (!representation[newFoods.getX()][newFoods.getY()].isEmpty())
-                newFoods = Coordinates.getRandomCoordinates(gameConfig.getWidth(), gameConfig.getHeight());
-            foods.add(newFoods);
-        }
-        return representation;
-    }
-
-    public void addAliveGamer(InetAddress inetAddress, int port) {
-        activeGamersPerCycle.add(new Gamer(inetAddress, port));
+        foods.addAll(field.generateFoods(neededFoods - foods.size()));
+        return field;
     }
 }
