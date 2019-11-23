@@ -9,6 +9,8 @@ import fit.networks.game.snake.Snake;
 import java.awt.*;
 import java.net.InetAddress;
 import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Objects;
 import java.util.Random;
 
 public class Gamer {
@@ -86,7 +88,7 @@ public class Gamer {
         return snake.getCoordinates().peekFirst();
     }
 
-    public ArrayDeque<Coordinates> getSnakeCoordinates() {
+    public Deque<Coordinates> getSnakeCoordinates() {
         return snake.getCoordinates();
     }
 
@@ -96,6 +98,9 @@ public class Gamer {
 
     @Override
     public boolean equals(Object gamer) {
+        if (!(gamer instanceof Gamer)) {
+            return false;
+        }
         return (((Gamer) gamer).port == port && ((Gamer) gamer).ipAddress == ipAddress);
     }
 
@@ -117,6 +122,7 @@ public class Gamer {
 
     public void startNewGame() {
         game.addGamer(this);
+        game.setId(id);
         snake.randomStart();
     }
 

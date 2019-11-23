@@ -1,7 +1,8 @@
 package fit.networks;
 
-import fit.networks.controller.SnakeSwingController;
-import fit.networks.gui.SnakeGUI;
+import fit.networks.controller.MessageBuilder;
+import fit.networks.controller.SnakeController;
+import fit.networks.controller.SnakeControllerImpl;
 
 
 import java.net.InetAddress;
@@ -18,9 +19,7 @@ public class Main {
             String name = args[0];
             InetAddress ipAddress = InetAddress.getByName(args[1]);
             int port = Integer.parseInt(args[2]);
-
-            SnakeSwingController snakeSwingController = new SnakeSwingController(name, ipAddress, port);
-            snakeSwingController.start();
+            SnakeControllerImpl.getController(name, ipAddress, port).start();
 
         } catch (Exception ex){
             ex.printStackTrace();

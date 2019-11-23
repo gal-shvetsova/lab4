@@ -14,9 +14,8 @@ public class Snake {
     public void run() {
         Coordinates head = coordinates.getFirst();
         Coordinates nextStep = head.move(direction);
-        if (outOfField(nextStep)) {
-            die();
-        }
+        nextStep = outOfField(nextStep);
+
         if (isAlive()) {
             if (!isGrowing) {
                 coordinates.removeLast();
@@ -25,11 +24,13 @@ public class Snake {
         }
     }
 
-    private boolean outOfField(Coordinates nextStep) {
-        return nextStep.getY() >= maxCoordinates.getY() ||
-                nextStep.getY() < 0 ||
-                nextStep.getX() >= maxCoordinates.getX() ||
-                nextStep.getX() < 0;
+    private Coordinates outOfField(Coordinates nextStep) {
+        int x = nextStep.getX(), y = nextStep.getY();
+        if (x < 0) x = maxCoordinates.getX() - 1;
+        if (y < 0) y = maxCoordinates.getY() - 1;
+        if (x >= maxCoordinates.getX()) x = 0;
+        if (y >= maxCoordinates.getY()) y = 0;
+        return new Coordinates(x, y);
     }
 
 
@@ -62,6 +63,7 @@ public class Snake {
         int x = random.nextInt(maxCoordinates.getX());
         int y = random.nextInt(maxCoordinates.getY());
         setStartCoordinates(x, y);
+        System.out.println("x " + x + " y " + y);
     }
 
 

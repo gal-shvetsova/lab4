@@ -1,25 +1,11 @@
 package fit.networks.controller;
 
-import fit.networks.protocol.SnakesProto;
+import fit.networks.game.GameConfig;
 
-import java.net.InetAddress;
-
-
-public abstract class SnakeController {
-    private InetAddress inetAddress;
-    private int port;
-
-
-
-    abstract void  pingProcessing(InetAddress inetAddress, int port);
-
-    InetAddress getInetAddress() {
-        return inetAddress;
-    }
-
-    int getPort() {
-        return port;
-    }
-    //  abstract void announcementProcessing();
-
+public interface SnakeController {
+    void startNewGame(GameConfig gameConfig);
+    void keyActivity(int x, int y);
+    String getName();
+    void leaveGame();
+    void start();
 }

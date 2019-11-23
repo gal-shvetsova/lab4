@@ -100,9 +100,9 @@ message GameMessage {
     }
     // Уведомление об идущей игре, регулярно отправляется multicast-ом
     message AnnouncementMsg {
-        required GamePlayers players = 1;            // Текущие игроки
-        required GameConfig config = 2;              // Параметры игры
-        optional bool can_join = 3 [default = true]; // Можно ли новому игроку присоединиться к игре (есть ли место на поле)
+        required GamePlayers players = 2;            // Текущие игроки
+        required GameConfig config = 3;              // Параметры игры
+        optional bool can_join = 4 [default = true]; // Можно ли новому игроку присоединиться к игре (есть ли место на поле)
     }
     // Новый игрок хочет присоединиться к идущей игре
     message JoinMsg {

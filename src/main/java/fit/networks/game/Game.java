@@ -8,14 +8,38 @@ import java.util.ArrayList;
 public class Game {  // создается только у мастера, сделать создание из предыдущей игры
 
     private GameConfig gameConfig;
+    private int id;
     private ArrayList<Gamer> activeGamers = new ArrayList<>();
-    private ArrayList<Gamer> activeGamersPerCycle = new ArrayList<>();
+    //private  activeGamersPerCycle = new ArrayList<>();
     private ArrayList<Coordinates> foods = new ArrayList<>();
 
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public Game(GameConfig gameConfig) {
         this.gameConfig = gameConfig;
 
+    }
+
+    public Game(GameConfig gameConfig, int id) {
+        this.gameConfig = gameConfig;
+        this.id = id;
+    }
+
+    public void setActiveGamers(ArrayList<Gamer> activeGamers) {
+        this.activeGamers = activeGamers;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Game)) return false;
+        return ((Game)obj).id == id;
     }
 
     public ArrayList<Gamer> getActiveGamers() {
@@ -31,10 +55,7 @@ public class Game {  // создается только у мастера, сд�
     }
 
     public boolean hasAliveGamers(){
-        for (Gamer gamer : activeGamers){
-            if (!gamer.isZombie()) return true;
-        }
-        return false;
+        return activeGamers.stream().noneMatch(Gamer::isZombie);
     }
 
     public Field makeRepresentation() {
