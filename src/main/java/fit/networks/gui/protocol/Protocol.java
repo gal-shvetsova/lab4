@@ -3,8 +3,8 @@ package fit.networks.gui.protocol;
 public class Protocol {
     private static Object[] ratingColumnsHeaders = new String[] {"№", "Имя",
             "Очки"};
-    private static Object[] allGamesColumnsHeaders = new String[] {"Ведущий", "№",
-            "Размер", "Еда", "Вход"};
+    private static Object[] allGamesColumnsHeaders = new String[] {"Ведущий", "#",
+            "Размер", "Еда"};
 
     public static String getLeaveGameButtonName(){
         return "Покинуть игру";
@@ -73,5 +73,9 @@ public class Protocol {
 
     public static String getCancelButtonName() {
         return "Отменить";
+    }
+
+    public static String getJoinGameButtonName() {
+        return "Присоединиться";
     }
 }

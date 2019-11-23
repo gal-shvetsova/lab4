@@ -1,6 +1,6 @@
 package fit.networks.gui;
 
-import fit.networks.controller.SnakeSwingController;
+import fit.networks.controller.SnakeControllerImpl;
 import fit.networks.game.gamefield.Field;
 
 import javax.swing.*;
@@ -16,17 +16,14 @@ public class GameBoard extends JPanel implements ActionListener {
     private final int ALLDOTS;
 
     private Field field = null;
-    private SnakeSwingController controller;
 
 
-    public GameBoard(int width, int height, int dotSize, SnakeSwingController controller) {
+    public GameBoard(int width, int height, int dotSize) {
         DOTSIZE = dotSize;
         ALLDOTS = width * height;
         WIDTH = width * DOTSIZE;
         HEIGHT = height * DOTSIZE;
-        this.controller = controller;
         setBackground(Color.WHITE);
-     //   setFocusable(true);
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setMinimumSize(new Dimension(WIDTH, HEIGHT));
 
