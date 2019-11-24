@@ -4,25 +4,25 @@ import fit.networks.protocol.Protocol;
 import fit.networks.protocol.SnakesProto;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class MessageControllerImpl implements MessageController {
 
     Thread receiveThread;
     Thread receiveMulticastThread;
-    private InetAddress companionAddress;
-    private int companionPort;
     private MulticastSocket socket;
+    private AtomicReference<CompanionNetInfo> companionNetInfo = new AtomicReference<>();
 
     private PriorityBlockingQueue<SnakesProto.GameMessage> receivedMessages = new PriorityBlockingQueue<>(
             Protocol.getMessageQueueCapacity(), (o1, o2) -> (int) (o1.getMsgSeq() - o2.getMsgSeq()));
 
     public MessageControllerImpl(InetAddress senderAddress, int senderPort, InetAddress receiverAddress, int receiverPort) throws IOException {
-        this.companionAddress = receiverAddress;
-        this.companionPort = receiverPort;
+        setAddressAndPort(receiverAddress, receiverPort);
         this.socket = new MulticastSocket(senderPort);
         this.socket.setInterface(senderAddress);
 
@@ -51,7 +51,7 @@ public class MessageControllerImpl implements MessageController {
                     byte[] message = new byte[10000];
                     DatagramPacket packet = new DatagramPacket(message, 10000);
                     socket.receive(packet);
-                    if (packet.getAddress() == receiverAddress && packet.getPort() == receiverPort) {
+                    if (packet.getAddress() == this.companionNetInfo.get().getCompanionAddress() && packet.getPort() == this.companionNetInfo.get().getCompanionPort()) {
                         byte[] actualMessage = new byte[packet.getLength()];
                         System.arraycopy(packet.getData(), 0, actualMessage, 0, packet.getLength());
                         SnakesProto.GameMessage protoMessage = SnakesProto.GameMessage.parseFrom(actualMessage);
@@ -68,7 +68,11 @@ public class MessageControllerImpl implements MessageController {
 
     @Override
     public SnakesProto.GameMessage receiveMessage() {
-        return receivedMessages.poll();
+        try {
+            return receivedMessages.take();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("queue was broken", e);
+        }
     }
 
     @Override
@@ -81,15 +85,40 @@ public class MessageControllerImpl implements MessageController {
     }
 
     @Override
-    public void sendMessage(SnakesProto.GameMessage message) throws IOException {
+    public void sendMessage(SnakesProto.GameMessage message) {
         byte[] byteMessage = message.toByteArray();
-        DatagramPacket packet = new DatagramPacket(byteMessage, byteMessage.length, companionAddress, companionPort);
-        socket.send(packet);
+        DatagramPacket packet = new DatagramPacket(byteMessage, byteMessage.length, companionNetInfo.get().getCompanionAddress(), companionNetInfo.get().getCompanionPort());
+        try {
+            socket.send(packet);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
     public void changeCompanion(InetAddress companionAddress, int companionPort) {
-        this.companionAddress = companionAddress;
-        this.companionPort = companionPort;
+        setAddressAndPort(companionAddress, companionPort);
+    }
+
+    synchronized private void setAddressAndPort(InetAddress companionAddress, int companionPort) {
+        this.companionNetInfo.set(new CompanionNetInfo(companionAddress, companionPort));
+    }
+
+    public static class CompanionNetInfo {
+        private InetAddress companionAddress;
+        private int companionPort;
+
+        public CompanionNetInfo(InetAddress companionAddress, int companionPort) {
+            this.companionAddress = companionAddress;
+            this.companionPort = companionPort;
+        }
+
+        public InetAddress getCompanionAddress() {
+            return companionAddress;
+        }
+
+        public int getCompanionPort() {
+            return companionPort;
+        }
     }
 }
