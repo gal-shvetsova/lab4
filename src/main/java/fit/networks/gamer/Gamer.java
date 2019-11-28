@@ -8,9 +8,7 @@ import fit.networks.game.snake.Snake;
 
 import java.awt.*;
 import java.net.InetAddress;
-import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.Objects;
 import java.util.Random;
 
 public class Gamer {

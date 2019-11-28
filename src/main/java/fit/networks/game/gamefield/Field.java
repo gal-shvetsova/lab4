@@ -69,7 +69,7 @@ public class Field {
             Random random = new Random();
             int value = random.nextInt(101);
             if (value < probability * 100) {
-                foods.add(new Coordinates(c.getX(), c.getY()));
+                foods.add(Coordinates.of(c.getX(), c.getY()));
                 field[c.getX()][c.getY()].setFood();
             }
         }

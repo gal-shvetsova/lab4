@@ -1,10 +1,12 @@
 package fit.networks.gui;
 
-import fit.networks.controller.SnakeControllerImpl;
+import fit.networks.controller.GameController;
+import fit.networks.controller.GameControllerImpl;
 import fit.networks.gui.protocol.Protocol;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 
@@ -87,6 +89,20 @@ public class InfoPanel extends JPanel {
         }
     }
 
+    private void sendJoinRequest(Object gameInfo){
+        String gameInfoStr = (String)gameInfo;
+        System.out.println(gameInfo);
+        int indexStartAddress = gameInfoStr.indexOf("["),
+                indexFinishAddress = gameInfoStr.indexOf("]"),
+                indexStartPort = gameInfoStr.lastIndexOf("["),
+                indexFinishPort = gameInfoStr.lastIndexOf("]");
+
+        String addressStr = gameInfoStr.substring(indexStartAddress + 1, indexFinishAddress);
+        String portStr = gameInfoStr.substring(indexStartPort + 1, indexFinishPort);
+        System.out.println(addressStr + portStr);
+        GameControllerImpl.getController().joinGame(addressStr, Integer.parseInt(portStr));
+    }
+
     class MainFormAction extends AbstractAction {
         private static final long serialVersionUID = 1L;
 
@@ -94,16 +110,17 @@ public class InfoPanel extends JPanel {
         public void actionPerformed(ActionEvent actionEvent) {
             JButton btn = (JButton) actionEvent.getSource();
             if (btn == newGameButton) {
-                NewGameForm newGameForm = new NewGameForm();
+                GameParamsForm newGameForm = new GameParamsForm();
                 newGameForm.setVisible(true);
                 leaveGameButton.setEnabled(true);
                 newGameButton.setEnabled(false);
             } else if (btn == leaveGameButton) {
-                SnakeControllerImpl.getController().leaveGame();
+                GameControllerImpl.getController().leaveGame();
                 newGameButton.setEnabled(true);
                 leaveGameButton.setEnabled(false);
             } else if (btn == joinGameButton) {
-                System.out.println("row " + allGamesTable.getSelectedRow());
+                int index = allGamesTable.getSelectedRow();
+                sendJoinRequest(allGamesTable.getModel().getValueAt(index, 0));
 
             }
         }

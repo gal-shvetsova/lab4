@@ -10,4 +10,5 @@ public interface View {
     void endGame();
     void showForm();
     void startGame(GameConfig gameConfig);
+    void showErrorMessage();
 }

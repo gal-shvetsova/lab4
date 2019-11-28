@@ -4,77 +4,77 @@ import fit.networks.game.GameConfig;
 import fit.networks.gamer.Gamer;
 import fit.networks.gui.SnakeGUI;
 import fit.networks.protocol.ProtoHelper;
+import fit.networks.protocol.Protocol;
 import fit.networks.protocol.SnakesProto;
 import fit.networks.view.View;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.net.InetAddress;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
-public class SnakeControllerImpl implements SnakeController {
+public class GameControllerImpl implements GameController {
     private View snakeGUI;
     private Gamer gamer;
     private String name;
     private InetAddress inetAddress;
     private int port;
-    private Map<Integer, SnakesProto.GameMessage.AnnouncementMsg> availableServers = new HashMap<>();  //запущенные игры
+    //TODO: delete identical game
+    private ConcurrentMap<Pair<InetAddress, Integer>, SnakesProto.GameMessage.AnnouncementMsg> availableServers = new ConcurrentHashMap<>();  //запущенные игры
     private Timer timer = new Timer();
-    private MultiController multiController;
-    private Thread messageReceiver;
-    private TimerTask messageSender;
+    private TimerTask messageSenderTask;
     private GUIUpdater guiUpdater;
-    private static SnakeController snakeController = null;
+    private static GameController snakeController = null;
 
-    private SnakeControllerImpl(String name, InetAddress inetAddress, int port) {
+    private GameControllerImpl(String name, InetAddress inetAddress, int port) {
         this.snakeGUI = new SnakeGUI();
         this.name = name;
         this.inetAddress = inetAddress;
         this.port = port;
         this.gamer = null;
-        this.multiController = new MultiControllerImpl();
-        this.messageReceiver = new Thread(() -> {
-            while (true) {
-                SnakesProto.GameMessage message = multiController.receiveMessage();
-                if (message == null) continue;
-                switch (message.getTypeCase()) {
-                    case ANNOUNCEMENT:
-                        SnakesProto.GamePlayer master = ProtoHelper.getMasterId(message.getAnnouncement().getPlayers());
-                        if (master == null) {
-                            break;
-                        }
-                        availableServers.put(master.getId(), message.getAnnouncement());
-                        break;
-                    case PING:
-                        break;
-                }
-            }
-        });
-        this.messageReceiver.start();
+        MessageControllerImpl.startMessageController(inetAddress, port);
+        ProtoMessagesListenerImpl.getListener();
     }
 
-    public static SnakeController getController(String name, InetAddress inetAddress, int port){
-        if (snakeController == null){
-            snakeController = new SnakeControllerImpl(name, inetAddress, port);
+    public static GameController getController(String name, InetAddress inetAddress, int port) {
+        if (snakeController == null) {
+            snakeController = new GameControllerImpl(name, inetAddress, port);
         }
-
         return snakeController;
     }
 
-    public static SnakeController getController(){
+    public static GameController getController() {
         return snakeController;
     }
 
+    @Override
+    public void addAvailableGame(InetAddress inetAddress, int port, SnakesProto.GameMessage.AnnouncementMsg message) {
+
+        System.out.println(availableServers.containsKey(ImmutablePair.of(inetAddress, port)));
+        availableServers.put(ImmutablePair.of(inetAddress, port), message);
+    }
+
+
+    @Override
+    public void addAliveGamer(InetAddress inetAddress, int port) {
+
+    }
+
+    @Override
+    public void joinGame(String addressStr, int parseInt) {
+
+    }
 
     private class GUIUpdater extends TimerTask {
         private String[][] makeAvailableServersTable() {
             String[][] table = new String[availableServers.size()][4];
             int i = 0;
             for (SnakesProto.GameMessage.AnnouncementMsg msg : availableServers.values()) {
-                for (SnakesProto.GamePlayer player : msg.getPlayers().getPlayersList()) {
-                    if (player.getRole() == SnakesProto.NodeRole.MASTER) {
-                        table[i][0] = player.getName() + " [" + player.getIpAddress() + "]";
-                        break;
-                    }
-                }
+                SnakesProto.GamePlayer master = ProtoHelper.getMaster(msg.getPlayers());
+                if (master == null) continue;
+                table[i][0] = master.getName() + " [" + master.getIpAddress() + "]" + " [" + master.getPort() + "]";
                 table[i][1] = ((Integer) msg.getPlayers().getPlayersList().size()).toString();
                 table[i][2] = msg.getConfig().getWidth() + " * " + msg.getConfig().getHeight();
                 table[i][3] = msg.getConfig().getFoodStatic() + " + " + msg.getConfig().getFoodPerPlayer() + "x";
@@ -98,7 +98,6 @@ public class SnakeControllerImpl implements SnakeController {
         }
     }
 
-
     public String getName() {
         return name;
     }
@@ -108,14 +107,25 @@ public class SnakeControllerImpl implements SnakeController {
         gamer.startNewGame();
         timer = new Timer();
         guiUpdater = new GUIUpdater();
-        timer.schedule(guiUpdater, 0, 100);
-        messageSender = new TimerTask() {
+        timer.schedule(guiUpdater, 100, 100);
+        messageSenderTask = new TimerTask() {
             @Override
             public void run() {
-                multiController.sendMessage(MessageBuilder.makeAnnouncementMessage(gamer.getGame()));
+                try {
+                    InetAddress inetAddress = InetAddress.getByName(Protocol.getMulticastAddressName());
+                    int port = Protocol.getMulticastPort();
+                    SnakesProto.GameMessage protoAnnouncementMessage = MessageBuilder.makeAnnouncementMessage(gamer.getGame());
+                    Message announcementMessage = new Message(protoAnnouncementMessage, inetAddress, port);
+                    SnakesProto.GameMessage protoStateMessage = MessageBuilder.makeStateMessage(gamer);
+                    Message stateMessage = new Message(protoStateMessage, inetAddress, port);
+                    MessageControllerImpl.getMessageController().sendMessage(announcementMessage);
+                    MessageControllerImpl.getMessageController().sendMessage(stateMessage);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
         };
-        timer.schedule(messageSender, 0, 1000);
+        timer.schedule(messageSenderTask, 0, 1000);
         snakeGUI.startGame(gameConfig);
     }
 
@@ -126,9 +136,8 @@ public class SnakeControllerImpl implements SnakeController {
     public void endGame() {
         gamer = null;
         snakeGUI.endGame();
-        messageReceiver.interrupt();
         guiUpdater.cancel();
-        messageSender.cancel();
+        messageSenderTask.cancel();
     }
 
     public void keyActivity(int x, int y) {  //TODO: rename

@@ -1,7 +1,7 @@
 package fit.networks.gui;
 
-import fit.networks.controller.SnakeController;
-import fit.networks.controller.SnakeControllerImpl;
+import fit.networks.controller.GameController;
+import fit.networks.controller.GameControllerImpl;
 import fit.networks.game.GameConfig;
 import fit.networks.game.gamefield.Field;
 import fit.networks.view.View;
@@ -14,8 +14,9 @@ import java.awt.event.KeyEvent;
 public class SnakeGUI extends JFrame implements View {
     private JPanel gamePanel = new JPanel();
     private InfoPanel infoPanel = new InfoPanel();
+
     private GameBoard gameBoard = null;
-    private SnakeController controller;
+    private GameController controller;
 
     public SnakeGUI() {
         super("Snake");
@@ -70,7 +71,6 @@ public class SnakeGUI extends JFrame implements View {
     }
 
 
-
     public void startGame(GameConfig config) {
         Dimension dim = gamePanel.getSize();
         double dotSize = Math.floor(Math.sqrt(dim.width * dim.height / config.getWidth() / config.getHeight()));
@@ -91,7 +91,7 @@ public class SnakeGUI extends JFrame implements View {
     }
 
     public void showForm() {
-        this.controller = SnakeControllerImpl.getController();
+        this.controller = GameControllerImpl.getController();
         this.setVisible(true);
     }
 
@@ -99,5 +99,8 @@ public class SnakeGUI extends JFrame implements View {
         //todo: make small message about dying
     }
 
+    @Override
+    public void showErrorMessage() {
 
+    }
 }

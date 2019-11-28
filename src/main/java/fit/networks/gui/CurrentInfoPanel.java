@@ -1,6 +1,6 @@
 package fit.networks.gui;
 
-import fit.networks.controller.SnakeControllerImpl;
+import fit.networks.controller.GameControllerImpl;
 import fit.networks.game.GameConfig;
 import fit.networks.gui.protocol.Protocol;
 
@@ -47,7 +47,7 @@ public class CurrentInfoPanel extends JPanel {
     }
 
     void setGameInfo(GameConfig gameConfig) {
-        leadingValueLabel.setText(SnakeControllerImpl.getController().getName());
+        leadingValueLabel.setText(GameControllerImpl.getController().getName());
         foodValueLabel.setText(gameConfig.getFoodStatic() + " + " + gameConfig.getFoodPerPlayer() + "x");
         sizeValueLabel.setText(gameConfig.getWidth() + " * " + gameConfig.getHeight());
 

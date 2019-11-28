@@ -6,58 +6,69 @@ import fit.networks.protocol.SnakesProto;
 import java.util.Random;
 
 public class Coordinates {
-    private int x;
+    private final int x;
     private int y;
 
-    public Coordinates(int x, int y) {
+    @Override
+    public String toString() {
+        return "Coordinates{" +
+                "x=" + x +
+                ", y=" + y +
+                '}';
+    }
+
+    private Coordinates(int x, int y) {
         this.x = x;
         this.y = y;
     }
 
-    Coordinates(){
-        this.x = 0;
-        this.y = 0;
+    public static Coordinates of(int x, int y){
+        return new Coordinates(x,y);
     }
+
 
     public int getX() {
         return x;
-    }
-
-    public void setX(int x) {
-        this.x = x;
     }
 
     public int getY() {
         return y;
     }
 
-    public void setY(int y) {
-        this.y = y;
+    public Coordinates subtraction(Coordinates c){
+        int x = this.x - c.getX();
+        int y = this.y - c.getY();
+        return Coordinates.of(x,y);
     }
 
-    public void setCoordinates(int x, int y){
-        this.x = x;
-        this.y = y;
+    public Coordinates addition(Coordinates c){
+        int x = this.x + c.getX();
+        int y = this.y + c.getY();
+        return Coordinates.of(x,y);
+    }
+
+    public Coordinates multiplication(int k){
+        return Coordinates.of(x * k, y * k);
     }
 
     public static Coordinates getRandomCoordinates(int maxX, int maxY){
         Random random = new Random();
         int x = random.nextInt(maxX);
         int y = random.nextInt(maxY);
-        return new Coordinates(x, y);
+        return Coordinates.of(x, y);
 
     }
 
     public Coordinates move(Direction direction) {
         switch (direction) {
             case UP:
-                return new Coordinates(this.x, this.y - 1);
+                return Coordinates.of(this.x, this.y - 1);
             case DOWN:
-                return new Coordinates(this.x, this.y + 1);
+                return Coordinates.of(this.x, this.y + 1);
             case LEFT:
-                return new Coordinates(this.x - 1, this.y);
+                return Coordinates.of(this.x - 1, this.y);
             case RIGHT:
-                return new Coordinates(this.x + 1, this.y);
+                return Coordinates.of(this.x + 1, this.y);
             default:
                 throw new IllegalArgumentException("Unrecognized direction type" + direction);
         }
@@ -65,6 +76,7 @@ public class Coordinates {
 
     @Override
     public boolean equals(Object obj) {
+        if (!(obj instanceof Coordinates)) return false;
         return x == ((Coordinates)obj).getX() && y == ((Coordinates)obj).getY();
     }
 

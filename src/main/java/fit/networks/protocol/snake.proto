@@ -125,6 +125,7 @@ message GameMessage {
         optional NodeRole sender_role = 1;
         optional NodeRole receiver_role = 2;
     }
+
     required int64 msg_seq = 1;   // Порядковый номер сообщения, уникален для отправителя в пределах игры, монотонно возрастает
     optional int32 sender_id = 10;   // ID игрока-отправителя этого сообщения (обязательно для AckMsg и RoleChangeMsg)
     optional int32 receiver_id = 11; // ID игрока-получателя этого сообщения (обязательно для AckMsg и RoleChangeMsg)

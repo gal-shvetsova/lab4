@@ -3,7 +3,9 @@ package fit.networks.game;
 import fit.networks.game.gamefield.Field;
 import fit.networks.gamer.Gamer;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Game {  // создается только у мастера, сделать создание из предыдущей игры
 
@@ -34,6 +36,10 @@ public class Game {  // создается только у мастера, сд�
 
     public void setActiveGamers(ArrayList<Gamer> activeGamers) {
         this.activeGamers = activeGamers;
+    }
+
+    public void addAliveGamer(InetAddress inetAddress, int port){
+        this.activeGamers.add(new Gamer(inetAddress, port));
     }
 
     @Override
@@ -80,5 +86,9 @@ public class Game {  // создается только у мастера, сд�
 
         foods.addAll(field.generateFoods(neededFoods - foods.size()));
         return field;
+    }
+
+    public List<Coordinates> getFoodCoordinates() {
+        return foods;
     }
 }

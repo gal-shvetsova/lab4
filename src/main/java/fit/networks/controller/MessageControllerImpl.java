@@ -8,27 +8,28 @@ import java.io.UncheckedIOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class MessageControllerImpl implements MessageController {
 
     Thread receiveThread;
     Thread receiveMulticastThread;
     private MulticastSocket socket;
-    private AtomicReference<CompanionNetInfo> companionNetInfo = new AtomicReference<>();
+    private static MessageController messageController = null;
 
-    private PriorityBlockingQueue<SnakesProto.GameMessage> receivedMessages = new PriorityBlockingQueue<>(
-            Protocol.getMessageQueueCapacity(), (o1, o2) -> (int) (o1.getMsgSeq() - o2.getMsgSeq()));
+        private PriorityBlockingQueue<Message> receivedMessages = new PriorityBlockingQueue<>(
+            Protocol.getMessageQueueCapacity(), (o1, o2) -> (int) (o1.getProtoMessage().getMsgSeq() - o2.getProtoMessage().getMsgSeq()));
 
-    public MessageControllerImpl(InetAddress senderAddress, int senderPort, InetAddress receiverAddress, int receiverPort) throws IOException {
-        setAddressAndPort(receiverAddress, receiverPort);
+    private MessageControllerImpl(InetAddress senderAddress, int senderPort) throws IOException {
         this.socket = new MulticastSocket(senderPort);
         this.socket.setInterface(senderAddress);
 
         receiveMulticastThread = new Thread(() -> {
             int port = Protocol.getMulticastPort();
             try (MulticastSocket socket = new MulticastSocket(port)) {
+                socket.setInterface(senderAddress);
                 InetAddress inetAddress = InetAddress.getByName(Protocol.getMulticastAddressName());
                 socket.joinGroup(inetAddress);
                 while (true) {
@@ -38,7 +39,7 @@ public class MessageControllerImpl implements MessageController {
                     byte[] actualMessage = new byte[packet.getLength()];
                     System.arraycopy(packet.getData(), 0, actualMessage, 0, packet.getLength());
                     SnakesProto.GameMessage protoMessage = SnakesProto.GameMessage.parseFrom(actualMessage);
-                    receivedMessages.add(protoMessage);
+                    receivedMessages.add(new Message(protoMessage, packet.getAddress(), packet.getPort()));
                 }
             } catch (Exception e) {
                 this.socket.close(); //TODO: make error
@@ -51,12 +52,10 @@ public class MessageControllerImpl implements MessageController {
                     byte[] message = new byte[10000];
                     DatagramPacket packet = new DatagramPacket(message, 10000);
                     socket.receive(packet);
-                    if (packet.getAddress() == this.companionNetInfo.get().getCompanionAddress() && packet.getPort() == this.companionNetInfo.get().getCompanionPort()) {
-                        byte[] actualMessage = new byte[packet.getLength()];
-                        System.arraycopy(packet.getData(), 0, actualMessage, 0, packet.getLength());
-                        SnakesProto.GameMessage protoMessage = SnakesProto.GameMessage.parseFrom(actualMessage);
-                        receivedMessages.add(protoMessage);
-                    }
+                    byte[] actualMessage = new byte[packet.getLength()];
+                    System.arraycopy(packet.getData(), 0, actualMessage, 0, packet.getLength());
+                    SnakesProto.GameMessage protoMessage = SnakesProto.GameMessage.parseFrom(actualMessage);
+                    receivedMessages.add(new Message(protoMessage, packet.getAddress(), packet.getPort()));
                 }
             } catch (Exception e) {
                 this.socket.close();
@@ -66,8 +65,21 @@ public class MessageControllerImpl implements MessageController {
         receiveMulticastThread.start();
     }
 
+    public static void startMessageController(InetAddress inetAddress, int port){
+        try {
+            messageController = new MessageControllerImpl(inetAddress, port);
+        } catch (IOException ex){
+            ex.printStackTrace();
+        }
+    }
+
+
+    public static MessageController getMessageController() {
+        return messageController;
+    }
+
     @Override
-    public SnakesProto.GameMessage receiveMessage() {
+    public Message receiveMessage() {
         try {
             return receivedMessages.take();
         } catch (InterruptedException e) {
@@ -75,19 +87,11 @@ public class MessageControllerImpl implements MessageController {
         }
     }
 
-    @Override
-    public void sendMulticastMessage(SnakesProto.GameMessage message) throws IOException {
-        byte[] byteMessage = message.toByteArray();
-        InetAddress inetAddress = InetAddress.getByName(Protocol.getMulticastAddressName());
-        int port = Protocol.getMulticastPort();
-        DatagramPacket packet = new DatagramPacket(byteMessage, byteMessage.length, inetAddress, port);
-        socket.send(packet);
-    }
 
     @Override
-    public void sendMessage(SnakesProto.GameMessage message) {
-        byte[] byteMessage = message.toByteArray();
-        DatagramPacket packet = new DatagramPacket(byteMessage, byteMessage.length, companionNetInfo.get().getCompanionAddress(), companionNetInfo.get().getCompanionPort());
+    public void sendMessage(Message message) {
+        byte[] byteMessage = message.getProtoMessage().toByteArray();
+        DatagramPacket packet = new DatagramPacket(byteMessage, byteMessage.length, message.getInetAddress(), message.getPort());
         try {
             socket.send(packet);
         } catch (IOException e) {
@@ -96,29 +100,10 @@ public class MessageControllerImpl implements MessageController {
     }
 
     @Override
-    public void changeCompanion(InetAddress companionAddress, int companionPort) {
-        setAddressAndPort(companionAddress, companionPort);
+    public Queue<Message> receiveMessages() {
+        Queue<Message> messages = new PriorityQueue<>();
+        receivedMessages.drainTo(messages);
+        return messages;
     }
 
-    synchronized private void setAddressAndPort(InetAddress companionAddress, int companionPort) {
-        this.companionNetInfo.set(new CompanionNetInfo(companionAddress, companionPort));
-    }
-
-    public static class CompanionNetInfo {
-        private InetAddress companionAddress;
-        private int companionPort;
-
-        public CompanionNetInfo(InetAddress companionAddress, int companionPort) {
-            this.companionAddress = companionAddress;
-            this.companionPort = companionPort;
-        }
-
-        public InetAddress getCompanionAddress() {
-            return companionAddress;
-        }
-
-        public int getCompanionPort() {
-            return companionPort;
-        }
-    }
 }

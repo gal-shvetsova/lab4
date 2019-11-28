@@ -1,6 +1,6 @@
 package fit.networks.gui;
 
-import fit.networks.controller.SnakeControllerImpl;
+import fit.networks.controller.GameControllerImpl;
 import fit.networks.game.GameConfig;
 import fit.networks.gui.protocol.Protocol;
 
@@ -8,7 +8,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 
-class NewGameForm extends JFrame {
+class GameParamsForm extends JFrame {
     private JTextField width = new JTextField(10);
     private JTextField height = new JTextField(10);
     private JTextField foodStatic = new JTextField(10);
@@ -16,11 +16,10 @@ class NewGameForm extends JFrame {
     private JTextField delayMs = new JTextField(10);
     private JTextField deadFoodProb = new JTextField(10);
     private JButton okButton = new JButton(new NewGameAction());
-    private JButton cancelButton = new JButton(new NewGameAction());
     private GameConfig gameConfig;
 
-    //TODO: add validation
-    public NewGameForm() {
+
+    public GameParamsForm() {
         super("New game");
         this.gameConfig = null;
         setDefaultValues();
@@ -47,6 +46,7 @@ class NewGameForm extends JFrame {
         add(deadFoodProb, c);
         okButton.setText(Protocol.getOkButtonName());
         okButton.setName(Protocol.getOkButtonName());
+        JButton cancelButton = new JButton(new NewGameAction());
         cancelButton.setText(Protocol.getCancelButtonName());
         cancelButton.setName(Protocol.getCancelButtonName());
 
@@ -79,9 +79,9 @@ class NewGameForm extends JFrame {
 
                 gameConfig = new GameConfig(parsedWidth, parsedHeight, parsedFoodStatic, parsedFoodPerPlayer, parsedDelay,
                         parsedDeadFoodProb);
-                SnakeControllerImpl.getController().startNewGame(gameConfig);
+                GameControllerImpl.getController().startNewGame(gameConfig);
             } catch (NumberFormatException ex) {
-                System.out.println("err");
+                System.out.println("err"); //TODO : make message
             } catch (IllegalArgumentException argEx) {
                 System.out.println("arg err");
                 argEx.printStackTrace();

@@ -1,20 +1,20 @@
 package fit.networks.protocol;
 
-import java.awt.*;
-import java.net.InetAddress;
-
 public class Protocol {
 
     public static String getMulticastAddressName() {
-        return "224.0.0.0";
+        return "239.192.0.4";
     }
 
     public static Integer getMulticastPort() {
-        return 5050;
+        return 9192;
     }
 
     public static Integer getMessageQueueCapacity() {
         return 1000;
     }
 
+    public static long getMessageReceivingInterval() {
+        return 1500;
+    }
 }

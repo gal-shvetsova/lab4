@@ -1,6 +1,5 @@
 package fit.networks.gui;
 
-import fit.networks.controller.SnakeControllerImpl;
 import fit.networks.game.gamefield.Field;
 
 import javax.swing.*;
