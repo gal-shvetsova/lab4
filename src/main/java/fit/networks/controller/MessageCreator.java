@@ -11,7 +11,7 @@ import fit.networks.util.ProtoUtils;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class MessageBuilder {
+public class MessageCreator {
     private static AtomicInteger messageSeq = new AtomicInteger(0);
     private static AtomicInteger stateOrder = new AtomicInteger(0);
 
@@ -43,11 +43,10 @@ public class MessageBuilder {
     }
 
     public static SnakesProto.GameMessage makePingMessage() {
-        SnakesProto.GameMessage.Builder message = SnakesProto.GameMessage.newBuilder();
-        SnakesProto.GameMessage.PingMsg.Builder pingMessage = SnakesProto.GameMessage.PingMsg.newBuilder();
-        message.setMsgSeq(messageSeq.addAndGet(1));
-        message.setPing(pingMessage.build());
-        return message.build();
+        return SnakesProto.GameMessage.newBuilder()
+                .setMsgSeq(messageSeq.addAndGet(1))
+                .setPing(SnakesProto.GameMessage.PingMsg.newBuilder().build())
+                .build();
     }
 
     public static SnakesProto.GameMessage makeSteerMsg(Direction direction) {

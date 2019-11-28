@@ -19,7 +19,7 @@ public class Gamer {
     private int port;
     private Snake snake;
     private Color color;
-    private boolean isMaster;
+    private Role role;
     private Game game;
 
     public Gamer(String name, InetAddress ipAddress, int port, GameConfig gameConfig, boolean isMaster) {
@@ -28,7 +28,7 @@ public class Gamer {
         this.port = port;
         this.id = nextId++;
         this.snake = new Snake(gameConfig.getMaxCoordinates());
-        this.isMaster = isMaster;
+        this.role = isMaster ? Role.MASTER : Role.NORMAL;
         this.game = new Game(gameConfig);
         Random rand = new Random();
         int r = rand.nextInt(256);
@@ -40,7 +40,6 @@ public class Gamer {
     public Gamer(InetAddress inetAddress, int port) {
         this.ipAddress = inetAddress;
         this.port = port;
-        this.isMaster = false;
     }
 
 
@@ -107,7 +106,7 @@ public class Gamer {
     }
 
     public boolean isMaster() {
-        return isMaster;
+        return role == Role.MASTER;
     }
 
     public void becomeZombie() {

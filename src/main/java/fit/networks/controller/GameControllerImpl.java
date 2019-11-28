@@ -114,9 +114,9 @@ public class GameControllerImpl implements GameController {
                 try {
                     InetAddress inetAddress = InetAddress.getByName(Protocol.getMulticastAddressName());
                     int port = Protocol.getMulticastPort();
-                    SnakesProto.GameMessage protoAnnouncementMessage = MessageBuilder.makeAnnouncementMessage(gamer.getGame());
+                    SnakesProto.GameMessage protoAnnouncementMessage = MessageCreator.makeAnnouncementMessage(gamer.getGame());
                     Message announcementMessage = new Message(protoAnnouncementMessage, inetAddress, port);
-                    SnakesProto.GameMessage protoStateMessage = MessageBuilder.makeStateMessage(gamer);
+                    SnakesProto.GameMessage protoStateMessage = MessageCreator.makeStateMessage(gamer);
                     Message stateMessage = new Message(protoStateMessage, inetAddress, port);
                     MessageControllerImpl.getMessageController().sendMessage(announcementMessage);
                     MessageControllerImpl.getMessageController().sendMessage(stateMessage);

@@ -1,7 +1,5 @@
 package fit.networks.game.snake;
 
-import fit.networks.protocol.SnakesProto;
-
 import java.util.Random;
 
 public enum Direction {

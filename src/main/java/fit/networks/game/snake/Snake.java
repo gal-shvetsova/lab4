@@ -1,14 +1,11 @@
 package fit.networks.game.snake;
 
 import fit.networks.game.Coordinates;
-import fit.networks.game.gamefield.Field;
-import fit.networks.protocol.SnakesProto;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Random;
 import java.util.logging.Logger;
-import java.util.zip.CheckedOutputStream;
 
 public class Snake {
     private final Coordinates maxCoordinates;
