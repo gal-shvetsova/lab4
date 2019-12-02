@@ -4,6 +4,7 @@ import fit.networks.game.Coordinates;
 import fit.networks.game.Game;
 import fit.networks.game.GameConfig;
 import fit.networks.game.gamefield.Field;
+import fit.networks.game.snake.Direction;
 import fit.networks.game.snake.Snake;
 
 import java.awt.*;
@@ -140,8 +141,8 @@ public class Gamer {
 
 
 
-    public void moveSnake(int x, int y) {
-        snake.changeDirection(x, y);
+    public void moveSnake(Direction direction) {
+        snake.changeDirection(direction);
     }
 
 }

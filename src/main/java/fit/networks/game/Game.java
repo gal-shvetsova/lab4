@@ -6,6 +6,7 @@ import fit.networks.gamer.Gamer;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class Game {  // создается только у мастера, сделать создание из предыдущей игры
@@ -127,5 +128,9 @@ public class Game {  // создается только у мастера, сд�
         });
         return field;
 
+    }
+
+    public Gamer getMaster() {
+      return activeGamers.stream().filter(Gamer::isMaster).findFirst().orElse(null);
     }
 }

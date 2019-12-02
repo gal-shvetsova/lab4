@@ -161,11 +161,10 @@ public class Snake {
 
 
 
-    synchronized public void changeDirection(int x, int y) {
-        Direction newDirection = Direction.getDirection(x, y);
+    synchronized public void changeDirection(Direction direction) {
         if (newDirection == direction) return;
-        if (direction.isOpposite(newDirection)) return;
-        this.newDirection = newDirection;
+        if (this.direction.isOpposite(direction)) return;
+        this.newDirection = direction;
     }
 
 }

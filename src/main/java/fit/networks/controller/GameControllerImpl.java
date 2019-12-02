@@ -2,6 +2,7 @@ package fit.networks.controller;
 
 import fit.networks.game.Game;
 import fit.networks.game.GameConfig;
+import fit.networks.game.snake.Direction;
 import fit.networks.gamer.Gamer;
 import fit.networks.gamer.Role;
 import fit.networks.gui.SnakeGUI;
@@ -100,6 +101,13 @@ public class GameControllerImpl implements GameController {
         if (!snakeGUI.isStarted())
             snakeGUI.startGame(game.getGameConfig());
         snakeGUI.loadNewField(game.makeRepresentation());
+    }
+
+    @Override
+    public void changeSnakeDirection(InetAddress inetAddress, int port, Direction direction) {
+       Gamer gamer = game.getGamerByAddress(inetAddress, port);
+       if (gamer == null) return;
+       gamer.moveSnake(direction);
     }
 
     @Override
@@ -205,16 +213,19 @@ public class GameControllerImpl implements GameController {
     }
 
     public void keyActivity(int x, int y) {  //TODO: rename
-        SnakesProto.GameMessage.SteerMsg.Builder steerMessage = SnakesProto.GameMessage.SteerMsg.newBuilder();
-        SnakesProto.GameMessage.Builder message = SnakesProto.GameMessage.newBuilder();
-        if (getCurrentGamer() == null) return;
+        if (game == null) return;
+
         if (getCurrentGamer().isMaster()) {
-            getCurrentGamer().moveSnake(x, y);
+            getCurrentGamer().moveSnake(Direction.getDirection(x, y));
+        } else {
+            SnakesProto.GameMessage protoMsg = MessageCreator.makeSteerMsg(Direction.getDirection(x, y));
+            Gamer master = game.getMaster();
+            Message message = new Message(protoMsg, master.getIpAddress(), master.getPort());
+            MessageControllerImpl.getMessageController().sendMessage(message);
         }
     }
 
     private Gamer getCurrentGamer() {
-        if (game == null) return null;
         return game.getGamerByAddress(inetAddress, port);
     }
 

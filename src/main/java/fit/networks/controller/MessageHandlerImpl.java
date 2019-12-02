@@ -73,7 +73,8 @@ public class MessageHandlerImpl implements MessageHandler {
     }
 
     private void handleSteer(Message message){
-
+        logger.info("handle steer");
+        GameControllerImpl.getController().changeSnakeDirection(message.getInetAddress(), message.getPort(), ProtoUtils.getDirection(message.getProtoMessage().getSteer().getDirection()));
     }
 
     private void handleAck(Message message){

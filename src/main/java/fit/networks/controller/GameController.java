@@ -2,6 +2,7 @@ package fit.networks.controller;
 
 import fit.networks.game.Game;
 import fit.networks.game.GameConfig;
+import fit.networks.game.snake.Direction;
 import fit.networks.protocol.SnakesProto;
 
 import java.net.InetAddress;
@@ -21,5 +22,7 @@ public interface GameController {
     void setGame(Game game);
 
     void loadNewState();
+
+    void changeSnakeDirection(InetAddress inetAddress, int port, Direction direction);
 }
 
