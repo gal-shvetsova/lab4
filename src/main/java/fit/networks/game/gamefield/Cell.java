@@ -28,6 +28,11 @@ public class Cell {
         this.color = FOOD_COLOR;
     }
 
+    void setEmpty(){
+        this.value = NONE_VALUE;
+        this.color = NONE_COLOR;
+    }
+
     public boolean isFood(){
         return value == FOOD_VALUE;
     }
@@ -38,6 +43,10 @@ public class Cell {
 
     public boolean isUser(){
         return !isEmpty() && !isFood();
+    }
+
+    public int getUserId(){
+        return value; //todo throw something if no user
     }
 
     public Color getColor(){

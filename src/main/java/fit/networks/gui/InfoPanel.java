@@ -1,14 +1,15 @@
 package fit.networks.gui;
 
-import fit.networks.controller.GameController;
 import fit.networks.controller.GameControllerImpl;
 import fit.networks.gui.protocol.Protocol;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.util.logging.Logger;
 
 public class InfoPanel extends JPanel {
     private Object[][] rating = new String[][]{{"0", "1", "2"}};
@@ -19,7 +20,8 @@ public class InfoPanel extends JPanel {
     private JButton leaveGameButton = new JButton(new MainFormAction());
     private JButton joinGameButton = new JButton(new MainFormAction());
     private CurrentInfoPanel currentInfoPanel = new CurrentInfoPanel();
-
+    private int row = -1;
+    private Logger logger = Logger.getLogger("info panel");
     public InfoPanel() {
         super();
         initInfoPanel();
@@ -45,7 +47,7 @@ public class InfoPanel extends JPanel {
         DefaultTableModel model = new DefaultTableModel() {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false;
+                return true;
             }
         };
 
@@ -54,9 +56,11 @@ public class InfoPanel extends JPanel {
         }
 
         allGamesTable = new JTable(model);
-        allGamesTable.setFocusable(false);
+        allGamesTable.setFocusable(true);
+        allGamesTable.requestFocus();
         allGamesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         allGamesTable.setRowSelectionAllowed(true);
+
         setBackground(Color.LIGHT_GRAY);
         setLayout(new GridBagLayout());
 
@@ -73,8 +77,28 @@ public class InfoPanel extends JPanel {
 
         c.fill = GridBagConstraints.HORIZONTAL;
         add(new JScrollPane(allGamesTable), c);
-
+        requestFocus();
         add(joinGameButton, c);
+        ListSelectionModel selectionModel = allGamesTable.getSelectionModel();
+
+        selectionModel.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                handleSelectionEvent(e);
+            }
+        });
+    }
+
+    protected void handleSelectionEvent(ListSelectionEvent e) {
+        if (e.getValueIsAdjusting())
+            return;
+        String strSource= e.getSource().toString();
+        int start = strSource.indexOf("{")+1,
+                stop  = strSource.length()-1;
+        System.out.println(strSource);
+        String num = strSource.substring(start, stop);
+        if (!num.equals(""))
+            row = Integer.parseInt(num);
+        System.out.println(row);
     }
 
     public void updateTable(String[][] games) {
@@ -91,7 +115,6 @@ public class InfoPanel extends JPanel {
 
     private void sendJoinRequest(Object gameInfo){
         String gameInfoStr = (String)gameInfo;
-        System.out.println(gameInfo);
         int indexStartAddress = gameInfoStr.indexOf("["),
                 indexFinishAddress = gameInfoStr.indexOf("]"),
                 indexStartPort = gameInfoStr.lastIndexOf("["),
@@ -109,6 +132,7 @@ public class InfoPanel extends JPanel {
         @Override
         public void actionPerformed(ActionEvent actionEvent) {
             JButton btn = (JButton) actionEvent.getSource();
+            logger.info(btn.getName() + (btn == joinGameButton));
             if (btn == newGameButton) {
                 GameParamsForm newGameForm = new GameParamsForm();
                 newGameForm.setVisible(true);
@@ -119,9 +143,7 @@ public class InfoPanel extends JPanel {
                 newGameButton.setEnabled(true);
                 leaveGameButton.setEnabled(false);
             } else if (btn == joinGameButton) {
-                int index = allGamesTable.getSelectedRow();
-                sendJoinRequest(allGamesTable.getModel().getValueAt(index, 0));
-
+                sendJoinRequest(allGamesTable.getModel().getValueAt(row, 0));
             }
         }
     }

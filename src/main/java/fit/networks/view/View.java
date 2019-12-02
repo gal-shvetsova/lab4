@@ -11,4 +11,6 @@ public interface View {
     void showForm();
     void startGame(GameConfig gameConfig);
     void showErrorMessage();
+
+    boolean isStarted();
 }

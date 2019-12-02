@@ -14,7 +14,7 @@ import java.awt.event.KeyEvent;
 public class SnakeGUI extends JFrame implements View {
     private JPanel gamePanel = new JPanel();
     private InfoPanel infoPanel = new InfoPanel();
-
+    private boolean isStarted = false;
     private GameBoard gameBoard = null;
     private GameController controller;
 
@@ -80,6 +80,7 @@ public class SnakeGUI extends JFrame implements View {
         gamePanel.requestFocus();
         this.pack();
         this.repaint();
+        isStarted = true;
     }
 
     public void endGame() {
@@ -102,5 +103,10 @@ public class SnakeGUI extends JFrame implements View {
     @Override
     public void showErrorMessage() {
 
+    }
+
+    @Override
+    public boolean isStarted() {
+        return isStarted;
     }
 }

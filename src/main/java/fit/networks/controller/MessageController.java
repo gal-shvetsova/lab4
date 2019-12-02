@@ -10,4 +10,6 @@ public interface MessageController {
      Message receiveMessage();
      void sendMessage(Message message);
      Queue<Message> receiveMessages();
+     void addMessageToConfirm(Message message);
+     void confirmMessage(Message message);
 }

@@ -1,5 +1,6 @@
 package fit.networks.controller;
 
+import fit.networks.game.Game;
 import fit.networks.game.GameConfig;
 import fit.networks.protocol.SnakesProto;
 
@@ -15,5 +16,10 @@ public interface GameController {
     void addAliveGamer(InetAddress inetAddress, int port);
 
     void joinGame(String addressStr, int parseInt);
+    void hostGame(String name, InetAddress address, int port);
+
+    void setGame(Game game);
+
+    void loadNewState();
 }
 

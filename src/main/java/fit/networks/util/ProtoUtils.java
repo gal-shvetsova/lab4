@@ -1,9 +1,12 @@
 package fit.networks.util;
 
+import fit.networks.game.Coordinates;
+import fit.networks.game.snake.Direction;
+import fit.networks.gamer.Role;
 import fit.networks.protocol.SnakesProto;
 
 public class ProtoUtils {
-    public static SnakesProto.Direction get(fit.networks.game.snake.Direction direction) {
+    public static SnakesProto.Direction getProtoDirection(fit.networks.game.snake.Direction direction) {
         switch (direction) {
             case UP:
                 return SnakesProto.Direction.UP;
@@ -17,4 +20,55 @@ public class ProtoUtils {
                 throw new IllegalStateException("Unexpected value: " + direction);
         }
     }
+
+    public static SnakesProto.NodeRole getProtoRole(Role role) {
+        switch (role) {
+            case NORMAL:
+                return SnakesProto.NodeRole.NORMAL;
+            case MASTER:
+                return SnakesProto.NodeRole.MASTER;
+            case DEPUTY:
+                return SnakesProto.NodeRole.DEPUTY;
+            case VIEWER:
+                return SnakesProto.NodeRole.VIEWER;
+
+            default:
+                throw new IllegalStateException("Unexpected value: " + role);
+        }
+    }
+
+    public static Role getRole(SnakesProto.NodeRole role){
+        switch (role){
+            case NORMAL:
+                return Role.NORMAL;
+            case MASTER:
+                return Role.MASTER;
+            case DEPUTY:
+                return Role.DEPUTY;
+            case VIEWER:
+                return Role.VIEWER;
+            default:
+                throw new IllegalStateException("Unexpected value: " + role);
+        }
+    }
+
+    public static Direction getDirection(SnakesProto.Direction direction){
+        switch (direction){
+            case UP:
+               return Direction.UP;
+            case DOWN:
+                return Direction.DOWN;
+            case LEFT:
+                return Direction.LEFT;
+            case RIGHT:
+                return Direction.RIGHT;
+            default:
+                throw new IllegalStateException("Unexpected value: " + direction);
+        }
+    }
+
+    public static Coordinates getCoordinates(SnakesProto.GameState.Coord c){
+        return Coordinates.of(c.getX(), c.getY());
+    }
+
 }

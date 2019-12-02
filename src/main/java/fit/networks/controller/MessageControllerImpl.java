@@ -19,7 +19,10 @@ public class MessageControllerImpl implements MessageController {
     private MulticastSocket socket;
     private static MessageController messageController = null;
 
-        private PriorityBlockingQueue<Message> receivedMessages = new PriorityBlockingQueue<>(
+    private PriorityBlockingQueue<Message> receivedMessages = new PriorityBlockingQueue<>(
+            Protocol.getMessageQueueCapacity(), (o1, o2) -> (int) (o1.getProtoMessage().getMsgSeq() - o2.getProtoMessage().getMsgSeq()));
+
+    private PriorityBlockingQueue<Message> messagesToConfirm = new PriorityBlockingQueue<>(
             Protocol.getMessageQueueCapacity(), (o1, o2) -> (int) (o1.getProtoMessage().getMsgSeq() - o2.getProtoMessage().getMsgSeq()));
 
     private MessageControllerImpl(InetAddress senderAddress, int senderPort) throws IOException {
@@ -65,14 +68,13 @@ public class MessageControllerImpl implements MessageController {
         receiveMulticastThread.start();
     }
 
-    public static void startMessageController(InetAddress inetAddress, int port){
+    public static void startMessageController(InetAddress inetAddress, int port) {
         try {
             messageController = new MessageControllerImpl(inetAddress, port);
-        } catch (IOException ex){
+        } catch (IOException ex) {
             ex.printStackTrace();
         }
     }
-
 
     public static MessageController getMessageController() {
         return messageController;
@@ -106,4 +108,13 @@ public class MessageControllerImpl implements MessageController {
         return messages;
     }
 
+    @Override
+    public void addMessageToConfirm(Message message) {
+        messagesToConfirm.add(message);
+    }
+
+    @Override
+    public void confirmMessage(Message message) {
+        messagesToConfirm.removeIf(message1 -> message1.getProtoMessage().getMsgSeq() == message.getProtoMessage().getMsgSeq()); //todo check
+    }
 }

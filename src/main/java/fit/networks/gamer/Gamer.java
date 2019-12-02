@@ -10,6 +10,7 @@ import java.awt.*;
 import java.net.InetAddress;
 import java.util.Deque;
 import java.util.Random;
+import java.util.logging.Logger;
 
 public class Gamer {
     private static int nextId = 2;
@@ -20,16 +21,32 @@ public class Gamer {
     private Snake snake;
     private Color color;
     private Role role;
-    private Game game;
 
-    public Gamer(String name, InetAddress ipAddress, int port, GameConfig gameConfig, boolean isMaster) {
+    public Gamer(String name, InetAddress ipAddress, int port, GameConfig gameConfig, Role role) {
         this.name = name;
         this.ipAddress = ipAddress;
         this.port = port;
-        this.id = nextId++;
+        nextId+=2;  //todo: do something with that
+        Random random = new Random();
+        this.id = random.nextInt();
         this.snake = new Snake(gameConfig.getMaxCoordinates());
-        this.role = isMaster ? Role.MASTER : Role.NORMAL;
-        this.game = new Game(gameConfig);
+        this.role = role;
+        Random rand = new Random();
+        int r = rand.nextInt(256);
+        int g = rand.nextInt(256);
+        int b = rand.nextInt(256);
+        this.color = new Color(r, g, b);  //todo: make it depends by id
+    }
+
+    public Gamer(String name, InetAddress ipAddress, int port, GameConfig gameConfig, Role role, int id) {  //todo: make something
+        this.name = name;
+        this.ipAddress = ipAddress;
+        this.port = port;
+        nextId+=2;  //todo: do something with that
+        Random random = new Random();
+        this.id = id;
+        this.snake = new Snake(gameConfig.getMaxCoordinates());
+        this.role = role;
         Random rand = new Random();
         int r = rand.nextInt(256);
         int g = rand.nextInt(256);
@@ -45,7 +62,7 @@ public class Gamer {
 
     public static Gamer getNewGameMaster(String name, InetAddress inetAddress, int port, GameConfig gameConfig) {
         nextId = 2;
-        return new Gamer(name, inetAddress, port, gameConfig, true);
+        return new Gamer(name, inetAddress, port, gameConfig, Role.MASTER);
     }
 
 
@@ -77,12 +94,13 @@ public class Gamer {
         return snake;
     }
 
-    public Game getGame() {
-        return game;
-    }
 
     public Coordinates getSnakeHeadCoordinates() {
-        return snake.getCoordinates().peekFirst();
+        return snake.getCoordinates().getFirst();
+    }
+
+    public boolean isHead(Coordinates coordinates){
+        return getSnakeHeadCoordinates() == coordinates;
     }
 
     public Deque<Coordinates> getSnakeCoordinates() {
@@ -92,6 +110,7 @@ public class Gamer {
     public void setSnake(Snake snake) {
         this.snake = snake;
     }
+
 
     @Override
     public boolean equals(Object gamer) {
@@ -110,6 +129,8 @@ public class Gamer {
     }
 
     public void becomeZombie() {
+        Logger logger = Logger.getLogger("gamer");
+        logger.info("die");
         snake.die();
     }
 
@@ -117,17 +138,10 @@ public class Gamer {
         snake.run();
     }
 
-    public void startNewGame() {
-        game.addGamer(this);
-        game.setId(id);
-        snake.randomStart();
-    }
+
 
     public void moveSnake(int x, int y) {
         snake.changeDirection(x, y);
     }
 
-    public Field getRepresentation() {
-        return game.makeRepresentation();
-    }
 }

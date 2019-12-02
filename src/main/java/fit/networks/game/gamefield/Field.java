@@ -1,15 +1,23 @@
 package fit.networks.game.gamefield;
 
+import fit.networks.game.Game;
 import fit.networks.gamer.Gamer;
 import fit.networks.game.Coordinates;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.Random;
 
 public class Field {
     private Cell[][] field;
     private Coordinates maxCoordinates;
+
+    public void removeCoordinates(Deque<Coordinates> snakeCoordinates) {
+        for (Coordinates c: snakeCoordinates) {
+            field[c.getX()][c.getY()].setEmpty();
+        }
+    }
 
     public enum Result {
         OK,
@@ -31,6 +39,11 @@ public class Field {
 
     public boolean isEmpty(int x, int y){
         return field[x][y].isEmpty();
+    }
+
+
+    public Cell in (int x, int y){
+        return field[x][y];
     }
 
     public Field(Coordinates maxCoordinates) {
@@ -76,6 +89,10 @@ public class Field {
         return foods;
     }
 
+    public void setUser(int x, int y, Gamer gamer){
+        field[x][y].setUser(gamer);
+    }
+
     public Result addGamerSnake(Gamer gamer) {
         if (gamer.isZombie()) return Result.OK;
         Result result = Result.OK;
@@ -91,4 +108,5 @@ public class Field {
         }
         return result;
     }
+
 }

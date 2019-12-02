@@ -15,6 +15,6 @@ public class Protocol {
     }
 
     public static long getMessageReceivingInterval() {
-        return 1500;
+        return 100;
     }
 }

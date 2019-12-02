@@ -46,7 +46,7 @@ public class Snake {
                     isGrowing = false;
                 }
                 keyPoints.addFirst(circuitCoordinates(newHead));
-                logger.info("old dir " + keyPoints.toString());
+         //       logger.info("old dir " + keyPoints.toString());
                 return;
             }
 
@@ -66,7 +66,7 @@ public class Snake {
             }
         }
 
-        logger.info(keyPoints.toString());
+  //      logger.info(keyPoints.toString());
     }
 
     synchronized public boolean isAlive() {
@@ -75,6 +75,7 @@ public class Snake {
 
 
     synchronized public void die() {
+        logger.info("snake died");
         keyPoints.clear();
     }
 
@@ -86,8 +87,6 @@ public class Snake {
     synchronized public void setStartCoordinates(int x, int y) {
         Coordinates head = Coordinates.of(x, y);
         keyPoints.addFirst(head);
-        direction = Direction.getRandomDirection();
-        newDirection = direction;
         Coordinates tail = head.move(direction);
 
         keyPoints.addLast(tail.subtraction(head));
@@ -97,12 +96,18 @@ public class Snake {
         Random random = new Random();
         int x = random.nextInt(maxCoordinates.getX());
         int y = random.nextInt(maxCoordinates.getY());
+        direction = Direction.getRandomDirection();
+        newDirection = direction;
         setStartCoordinates(x, y);
         System.out.println("x " + x + " y " + y);
     }
 
+    public boolean isHead(Coordinates coordinates){
+        return keyPoints.getFirst() == coordinates;
+    }
+
     private Coordinates circuitCoordinates(Coordinates nextStep) {
-        logger.info("start " + nextStep);
+      //  logger.info("start " + nextStep);
         int x = nextStep.getX(), y = nextStep.getY();
         if (x < 0) {
             x = maxCoordinates.getX() + x;
@@ -116,7 +121,7 @@ public class Snake {
         if (y >= maxCoordinates.getY()) {
             y = y % maxCoordinates.getY();
         }
-        logger.info("finish " + x + " " + y);
+     //   logger.info("finish " + x + " " + y);
         return Coordinates.of(x, y);
     }
 
@@ -141,9 +146,20 @@ public class Snake {
             }
 
         }
-        logger.info("coord " + coordinates.toString());
+      //  logger.info("coord " + coordinates.toString());
         return coordinates;
     }
+
+    public void setKeyPoints(Deque<Coordinates> keyPoints) {
+        this.keyPoints = keyPoints;
+    }
+
+    public void setDirection(Direction direction) {
+        this.direction = direction;
+        this.newDirection = direction;
+    }
+
+
 
     synchronized public void changeDirection(int x, int y) {
         Direction newDirection = Direction.getDirection(x, y);

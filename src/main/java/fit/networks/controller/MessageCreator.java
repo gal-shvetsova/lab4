@@ -9,6 +9,7 @@ import fit.networks.protocol.SnakesProto;
 import fit.networks.util.ProtoUtils;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class MessageCreator {
@@ -27,8 +28,11 @@ public class MessageCreator {
     }
 
     private static SnakesProto.GameState.Snake makeSnake(Gamer gamer) {
+        Logger logger = Logger.getLogger("proto");
+     //   logger.info(gamer.toString() + " " + gamer.getSnake().getDirection() );
+      //  logger.info(gamer.getId() + " ");
         return SnakesProto.GameState.Snake.newBuilder()
-                .setHeadDirection(ProtoUtils.get(gamer.getSnake().getDirection()))
+                .setHeadDirection(ProtoUtils.getProtoDirection(gamer.getSnake().getDirection()))
                 .setPlayerId(gamer.getId())
                 .addAllPoints(gamer.getSnake().getKeyPoints().stream()
                         .map(point -> SnakesProto.GameState.Coord.newBuilder()
@@ -53,18 +57,24 @@ public class MessageCreator {
         SnakesProto.GameMessage.SteerMsg.Builder steerMessage = SnakesProto.GameMessage.SteerMsg.newBuilder();
         SnakesProto.GameMessage.Builder message = SnakesProto.GameMessage.newBuilder();
         message.setMsgSeq(messageSeq.getAndAdd(1));
-        steerMessage.setDirection(ProtoUtils.get(direction));
+        steerMessage.setDirection(ProtoUtils.getProtoDirection(direction));
         message.setSteer(steerMessage);
         return message.build();
     }
 
     public static SnakesProto.GameMessage makeJoinMsg(String name) {
-        SnakesProto.GameMessage.JoinMsg.Builder joinMessage = SnakesProto.GameMessage.JoinMsg.newBuilder();
-        SnakesProto.GameMessage.Builder message = SnakesProto.GameMessage.newBuilder();
-        message.setMsgSeq(messageSeq.getAndAdd(1));
-        message.setJoin(joinMessage);
-        joinMessage.setName(name);
-        return message.build();
+        return SnakesProto.GameMessage.newBuilder()
+                .setMsgSeq(messageSeq.getAndAdd(1))
+                .setJoin(
+                SnakesProto.GameMessage.JoinMsg.newBuilder().setName(name))
+                .build();
+    }
+
+    public static SnakesProto.GameMessage makeAckMsg(Message message){
+        return SnakesProto.GameMessage.newBuilder()
+                .setMsgSeq(message.getProtoMessage().getMsgSeq())
+                .setAck(SnakesProto.GameMessage.AckMsg.newBuilder())
+                .build();
     }
 
 
@@ -107,28 +117,30 @@ public class MessageCreator {
         return gamePlayers;
     }
 
-    public static SnakesProto.GameMessage makeStateMessage(Gamer gamer) {
+    public static SnakesProto.GameMessage makeStateMessage(Game game) {
         SnakesProto.GameMessage.Builder msg = SnakesProto.GameMessage.newBuilder();
         msg.setMsgSeq(messageSeq.getAndAdd(1));
         SnakesProto.GameMessage.StateMsg.Builder stateMsg = SnakesProto.GameMessage.StateMsg.newBuilder();
         SnakesProto.GameState.Builder gameStateMsg = SnakesProto.GameState.newBuilder();
         gameStateMsg.setStateOrder(stateOrder.getAndAdd(1));
 
-        for (Gamer g:gamer.getGame().getActiveGamers()) {
+        for (Gamer g: game.getActiveGamers()) {
             gameStateMsg.addSnakes(makeSnake(g));
         }
 
-        for (Coordinates c: gamer.getGame().getFoodCoordinates()){
+        for (Coordinates c: game.getFoodCoordinates()){
             SnakesProto.GameState.Coord.Builder coord = SnakesProto.GameState.Coord.newBuilder();
             coord.setX(c.getX());
             coord.setY(c.getY());
             gameStateMsg.addFoods(coord);
         }
 
-        gameStateMsg.setPlayers(makeGamePlayers(gamer.getGame()));
-        gameStateMsg.setConfig(makeGameConfig(gamer.getGame().getGameConfig()));
+        gameStateMsg.setPlayers(makeGamePlayers(game));
+        gameStateMsg.setConfig(makeGameConfig(game.getGameConfig()));
         stateMsg.setState(gameStateMsg);
         msg.setState(stateMsg);
         return msg.build();
     }
+
+
 }
