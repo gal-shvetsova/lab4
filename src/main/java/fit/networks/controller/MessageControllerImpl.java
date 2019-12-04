@@ -76,7 +76,7 @@ public class MessageControllerImpl implements MessageController {
         }
     }
 
-    public static MessageController getMessageController() {
+    public static MessageController getInstance() {
         return messageController;
     }
 

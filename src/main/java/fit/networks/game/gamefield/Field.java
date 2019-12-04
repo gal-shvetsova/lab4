@@ -1,30 +1,24 @@
 package fit.networks.game.gamefield;
 
-import fit.networks.game.Game;
-import fit.networks.gamer.Gamer;
 import fit.networks.game.Coordinates;
 
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.Deque;
-import java.util.Random;
 
 public class Field {
     private Cell[][] field;
     private Coordinates maxCoordinates;
 
-    public void removeCoordinates(Deque<Coordinates> snakeCoordinates) {
-        for (Coordinates c: snakeCoordinates) {
-            field[c.getX()][c.getY()].setEmpty();
+    public void setCells(Deque<Coordinates> coordinates, Cell newValue){
+        for (Coordinates c : coordinates) {
+            field[c.getX()][c.getY()] = newValue;
         }
     }
 
-    public enum Result {
-        OK,
-        DIE,
-        GROW;
-
+    public void setCells(Coordinates coordinates, Cell newValue){
+        field[coordinates.getX()][coordinates.getY()] = newValue;
     }
+
     public int getWidth(){
         return maxCoordinates.getX();
     }
@@ -37,76 +31,17 @@ public class Field {
         return field[i][j].getColor();
     }
 
-    public boolean isEmpty(int x, int y){
-        return field[x][y].isEmpty();
+    public int getValue(Coordinates c){
+        return field[c.getX()][c.getY()].getValue();
     }
 
-
-    public Cell in (int x, int y){
-        return field[x][y];
-    }
-
-    public Field(Coordinates maxCoordinates) {
+    public Field(Coordinates maxCoordinates, Cell cell) {
         this.maxCoordinates = maxCoordinates;
         field = new Cell[maxCoordinates.getX()][maxCoordinates.getY()];
         for (int i = 0; i < maxCoordinates.getX(); i++) {
             for (int j = 0; j < maxCoordinates.getY(); j++)
-                field[i][j] = new Cell();
+                field[i][j] = cell;
         }
-    }
-
-    public void addFoods(ArrayList<Coordinates> foods) {
-        for (Coordinates food : foods) {
-            field[food.getX()][food.getY()].setFood();
-        }
-    }
-
-    public ArrayList<Coordinates> generateFoods(int neededFoodCount) {
-        ArrayList<Coordinates> foods = new ArrayList<>();
-        int width = maxCoordinates.getX();
-        int height = maxCoordinates.getY();
-
-        while (foods.size() < neededFoodCount) {
-            Coordinates newFoods = Coordinates.getRandomCoordinates(width, height);
-            while (!field[newFoods.getX()][newFoods.getY()].isEmpty())
-                newFoods = Coordinates.getRandomCoordinates(width, height);
-            foods.add(newFoods);
-            field[newFoods.getX()][newFoods.getY()].setFood();
-        }
-        return foods;
-    }
-
-    public ArrayList<Coordinates> getFoodsAfterDie(Gamer gamer, double probability) {
-        ArrayList<Coordinates> foods = new ArrayList<>();
-        for (Coordinates c : gamer.getSnakeCoordinates()) {
-            Random random = new Random();
-            int value = random.nextInt(101);
-            if (value < probability * 100) {
-                foods.add(Coordinates.of(c.getX(), c.getY()));
-                field[c.getX()][c.getY()].setFood();
-            }
-        }
-        return foods;
-    }
-
-    public void setUser(int x, int y, Gamer gamer){
-        field[x][y].setUser(gamer);
-    }
-
-    public Result addGamerSnake(Gamer gamer) {
-        if (gamer.isZombie()) return Result.OK;
-        Result result = Result.OK;
-        for (Coordinates c : gamer.getSnakeCoordinates()) {
-            if (field[c.getX()][c.getY()].isFood()) {
-                result = Result.GROW;
-            } else if (field[c.getX()][c.getY()].isUser()) {
-                result = Result.DIE;
-                break;
-            } else {
-                field[c.getX()][c.getY()].setUser(gamer);
-            }
-        }
-        return result;
     }
 
 }

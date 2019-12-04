@@ -14,9 +14,9 @@ public class ProtoMessagesListenerImpl implements ProtoMessagesListener {
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                Queue<Message> messages = MessageControllerImpl.getMessageController().receiveMessages();
+                Queue<Message> messages = MessageControllerImpl.getInstance().receiveMessages();
                 for (Message message: messages) {
-                    MessageHandlerImpl.getMessageHandler().handle(message);
+                    MessageHandlerImpl.getInstance().handle(message);
                 }
             }
 

@@ -1,64 +1,61 @@
 package fit.networks.game;
 
+import fit.networks.game.gamefield.Cell;
 import fit.networks.game.gamefield.Field;
 import fit.networks.gamer.Gamer;
+import fit.networks.protocol.Protocol;
 
+import javax.annotation.Nullable;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class Game {  // создается только у мастера, сделать создание из предыдущей игры
+public class Game {
 
     private GameConfig gameConfig;
-    private int id;
-    private ArrayList<Gamer> activeGamers = new ArrayList<>();
+    private List<Gamer> gamers = new ArrayList<>();
     //private  activeGamersPerCycle = new ArrayList<>();
-    private ArrayList<Coordinates> foods = new ArrayList<>();
+    private Deque<Coordinates> foods = new ArrayDeque<>();
 
-    public Gamer getGamerByAddress(InetAddress inetAddress, int port){
-       return activeGamers.stream().filter(x -> x.getIpAddress().equals(inetAddress) && x.getPort() == port).findFirst().orElse(null);
+    public Optional<Gamer> getGamerByAddress(InetAddress inetAddress, int port) {
+        return gamers.stream().filter(x -> x.getIpAddress().equals(inetAddress) && x.getPort() == port).findFirst();
     }
 
-    public Gamer getGamerById(int id){
-        return activeGamers.stream().filter(x -> x.getId() == id).findFirst().orElse(null);
+    public Gamer getGamerById(int id) {
+        return gamers.stream().filter(x -> x.getId() == id).findFirst().orElse(null);
     }
 
-    public int getId() {
-        return id;
+    public boolean hasDeputy() {
+        return gamers.stream().allMatch(Gamer::isDeputy);
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public Gamer getDeputy() {
+        return gamers.stream().filter(Gamer::isDeputy).findFirst().orElse(null);
     }
+
 
     public Game(GameConfig gameConfig) {
         this.gameConfig = gameConfig;
-
     }
 
-    public Game(GameConfig gameConfig, ArrayList<Coordinates> foods) {
+    public Game(GameConfig gameConfig, Deque<Coordinates> foods) {
         this.gameConfig = gameConfig;
         this.foods = foods;
     }
 
-    public void setActiveGamers(ArrayList<Gamer> activeGamers) {
-        this.activeGamers = activeGamers;
+    public void setGamers(List<Gamer> gamers) {
+        this.gamers = gamers;
     }
 
     public void addAliveGamer(InetAddress inetAddress, int port) {
-        this.activeGamers.add(new Gamer(inetAddress, port));
+        this.gamers.add(new Gamer(inetAddress, port));
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof Game)) return false;
-        return ((Game) obj).id == id;
-    }
-
-    public ArrayList<Gamer> getActiveGamers() {
-        return activeGamers;
+    public List<Gamer> getAliveGamers() {
+        return gamers.stream()
+                .filter(Predicate.not(Gamer::isViewer))
+                .collect(Collectors.toList());
     }
 
     public GameConfig getGameConfig() {
@@ -66,71 +63,87 @@ public class Game {  // создается только у мастера, сд�
     }
 
     synchronized public void addGamer(Gamer gamer) {
-        activeGamers.add(gamer);
+        gamers.add(gamer);
     }
 
     public boolean hasAliveGamers() {
-        return activeGamers.stream().noneMatch(Gamer::isZombie);
+        return !gamers.stream().allMatch(Gamer::isDead); //todo: add viewers
     }
 
-    public Field makeRepresentation() {
-        Field field = new Field(gameConfig.getMaxCoordinates());
-        int neededFoods = gameConfig.getFoodStatic() + (int) (gameConfig.getFoodPerPlayer() * activeGamers.size());
-        field.addFoods(foods);
-
-        for (Gamer gamer : activeGamers) {
-            switch (field.addGamerSnake(gamer)) {
-                case DIE: {
-                    foods.addAll(field.getFoodsAfterDie(gamer, gameConfig.getDeadFoodProb()));
-                    gamer.becomeZombie();
-                    break;
-                }
-                case GROW: {
-                    foods.remove(gamer.getSnakeHeadCoordinates());
-                    gamer.getSnake().grow();
-                    break;
-                }
-            }
-        }
-
-        foods.addAll(field.generateFoods(neededFoods - foods.size()));
-        return field;
-    }
-
-
-    public List<Coordinates> getFoodCoordinates() {
+    public Deque<Coordinates> getFoodCoordinates() {
         return foods;
     }
 
-    public Field addGamerSnake() {
-        Field field = new Field(gameConfig.getMaxCoordinates());
-        for (Gamer g : activeGamers) {
-            if (g.isZombie()) continue;
+
+    public Field makeMasterRepresentation() {
+        Field field = new Field(gameConfig.getMaxCoordinates(), new Cell(Protocol.getNoneValue(), Protocol.getNoneColor()));
+        field.setCells(foods, new Cell(Protocol.getFoodValue(), Protocol.getFoodColor()));
+
+        for (Gamer g : gamers) {
             for (Coordinates c : g.getSnakeCoordinates()) {
-                if (field.in(c.getX(), c.getY()).isFood()) {
+                if (field.getValue(c) == Protocol.getFoodValue() && g.getSnake().isHead(c)) {
                     g.getSnake().grow();
-                } else if (field.in(c.getX(), c.getY()).isUser()) {
-                    Gamer anotherGamer = getGamerById(field.in(c.getX(), c.getY()).getUserId());
+                    field.setCells(c, new Cell(g.getId(), g.getColor()));
+                    foods.remove(c);
+                } else if (field.getValue(c) != Protocol.getNoneValue()) {
+                    Gamer anotherGamer = getGamerById(field.getValue(c));
                     if (anotherGamer.isHead(c)) {
-                        anotherGamer.becomeZombie();
+                        anotherGamer.becomeDying();
                     }
                     if (g.isHead(c)) {
-                        g.becomeZombie();
+                        g.becomeDying();
                     }
                 } else {
-                    field.setUser(c.getX(), c.getY(), g);
+                    field.setCells(c, new Cell(g.getId(), g.getColor()));
                 }
             }
         }
 
-        activeGamers.stream().filter(Gamer::isZombie).forEach(g -> {
-            field.removeCoordinates(g.getSnakeCoordinates());
+        gamers.stream().filter(Gamer::isViewer).forEach(g -> {
+            field.setCells(g.getSnakeCoordinates(), new Cell(Protocol.getNoneValue(), Protocol.getNoneColor()));
         });
-        return field;
 
+        Deque<Coordinates> foods = new ArrayDeque<>();
+        int neededFoods = gameConfig.getFoodStatic() + (int) (gameConfig.getFoodPerPlayer() * gamers.size());
+        int width = gameConfig.getMaxCoordinates().getX();
+        int height = gameConfig.getMaxCoordinates().getY();
+
+        while (this.foods.size() < neededFoods) {
+            Coordinates newFoods = Coordinates.getRandomCoordinates(width, height);
+            while (field.getValue(newFoods) != Protocol.getNoneValue()) {
+                newFoods = Coordinates.getRandomCoordinates(width, height);
+            }
+            foods.add(newFoods);
+            field.setCells(newFoods, new Cell(Protocol.getFoodValue(), Protocol.getFoodColor()));
+        }
+        this.foods.addAll(foods);
+
+        return field;
+    }
+
+    public Field makeRepresentation() {
+        Field field = new Field(gameConfig.getMaxCoordinates(), new Cell(Protocol.getNoneValue(), Protocol.getNoneColor()));
+        field.setCells(foods, new Cell(Protocol.getFoodValue(), Protocol.getFoodColor()));
+        for (Gamer g : gamers) {
+            for (Coordinates c : g.getSnakeCoordinates()) {
+                if (!g.isDead()) {
+                    field.setCells(c, new Cell(g.getId(), g.getColor()));
+                }
+            }
+        }
+        return field;
+    }
+
+    public void removeZombies() {
+        gamers = gamers.stream()
+                .filter(gamer -> !gamer.isDead())
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     public Gamer getMaster() {
-      return activeGamers.stream().filter(Gamer::isMaster).findFirst().orElse(null);
+        return gamers.stream()
+                .filter(Gamer::isMaster)
+                .findFirst()
+                .orElse(null);
     }
 }

@@ -6,6 +6,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.logging.Logger;
 
 public class GameBoard extends JPanel implements ActionListener {
 
@@ -15,6 +16,7 @@ public class GameBoard extends JPanel implements ActionListener {
     private final int ALLDOTS;
 
     private Field field = null;
+    private Logger logger = Logger.getLogger("board");
 
 
     public GameBoard(int width, int height, int dotSize) {
@@ -38,11 +40,11 @@ public class GameBoard extends JPanel implements ActionListener {
         super.paintComponent(g);
         if (field == null) return;
         for (int i = 0; i < field.getWidth(); i++) {
-            for (int j = 0; j < field.getHeight(); j++)
-                if (!field.isEmpty(i, j)) {
-                    g.setColor(field.getColor(i, j));
-                    g.fillRect(i * DOTSIZE, j * DOTSIZE, DOTSIZE, DOTSIZE);
-                }
+            for (int j = 0; j < field.getHeight(); j++) {
+                logger.info(field.getColor(i,j) + " ");
+                g.setColor(field.getColor(i, j));
+                g.fillRect(i * DOTSIZE, j * DOTSIZE, DOTSIZE, DOTSIZE);
+            }
         }
         Toolkit.getDefaultToolkit().sync();
     }
@@ -52,7 +54,5 @@ public class GameBoard extends JPanel implements ActionListener {
     public void actionPerformed(ActionEvent actionEvent) {
 
     }
-
-
 
 }

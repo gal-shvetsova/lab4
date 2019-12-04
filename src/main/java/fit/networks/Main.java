@@ -1,6 +1,8 @@
 package fit.networks;
 
-import fit.networks.controller.GameControllerImpl;
+import fit.networks.controller.*;
+import fit.networks.gui.SnakeGUI;
+import fit.networks.view.View;
 
 
 import java.net.InetAddress;
@@ -10,6 +12,13 @@ import java.util.logging.Level;
 
 public class Main {
     static final Logger logger = Logger.getLogger("Main");
+    private static final View snakeGui = SnakeGUI.getInstance();
+
+    private static GameController controller;
+    private static MessageController messageController = MessageControllerImpl.getInstance();
+    private static MessageHandler messageHandler = MessageHandlerImpl.getInstance();
+    private static ProtoMessagesListener protoMessagesListener = ProtoMessagesListenerImpl.getListener();
+
     public static void main(String[] args) {
 
 
@@ -27,9 +36,13 @@ public class Main {
             System.exit(Level.OFF.intValue());
         }
         int port = Integer.parseInt(args[2]);
-        GameControllerImpl.getController(name, ipAddress, port).start();
 
+        controller = GameControllerImpl.getController(name, ipAddress, port, snakeGui);
+
+        controller.start();
 
     }
+
+
 
 }

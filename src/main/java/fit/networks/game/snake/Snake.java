@@ -14,10 +14,13 @@ public class Snake {
     private Direction newDirection;
     private boolean isGrowing = false;
     private Logger logger;
+    private int points = 0;
+    private boolean isDying = false;
 
     public Snake(Coordinates maxCoordinates) {
         this.maxCoordinates = maxCoordinates;
         logger = Logger.getLogger("snake");
+        randomStart();
     }
 
     synchronized public Direction getDirection() {
@@ -32,8 +35,9 @@ public class Snake {
 
             if (direction == newDirection) {
                 Coordinates node = keyPoints.pollFirst();
-                node = Coordinates.of((int) (node.getX() + Math.signum(node.getX()))
-                        , (int) (node.getY() + Math.signum(node.getY())));
+                int x = (int) (node.getX() + Math.signum(node.getX()));
+                int y = (int) (node.getY() + Math.signum(node.getY()));
+                node = Coordinates.of(x, y);
                 keyPoints.addFirst(node);
 
                 if (!isGrowing) {
@@ -46,7 +50,6 @@ public class Snake {
                     isGrowing = false;
                 }
                 keyPoints.addFirst(circuitCoordinates(newHead));
-         //       logger.info("old dir " + keyPoints.toString());
                 return;
             }
 
@@ -65,19 +68,22 @@ public class Snake {
                 isGrowing = false;
             }
         }
-
-  //      logger.info(keyPoints.toString());
+        die();
     }
 
     synchronized public boolean isAlive() {
-        return !keyPoints.isEmpty();
+        return !isDying;
     }
 
 
     synchronized public void die() {
-        logger.info("snake died");
         keyPoints.clear();
     }
+
+    synchronized public void setDyingState(){
+        isDying = true;
+    }
+
 
     synchronized public void grow() {
         isGrowing = true;
@@ -88,7 +94,6 @@ public class Snake {
         Coordinates head = Coordinates.of(x, y);
         keyPoints.addFirst(head);
         Coordinates tail = head.move(direction);
-
         keyPoints.addLast(tail.subtraction(head));
     }
 
@@ -103,11 +108,10 @@ public class Snake {
     }
 
     public boolean isHead(Coordinates coordinates){
-        return keyPoints.getFirst() == coordinates;
+        return keyPoints.getFirst().equals(coordinates);
     }
 
     private Coordinates circuitCoordinates(Coordinates nextStep) {
-      //  logger.info("start " + nextStep);
         int x = nextStep.getX(), y = nextStep.getY();
         if (x < 0) {
             x = maxCoordinates.getX() + x;
@@ -121,7 +125,6 @@ public class Snake {
         if (y >= maxCoordinates.getY()) {
             y = y % maxCoordinates.getY();
         }
-     //   logger.info("finish " + x + " " + y);
         return Coordinates.of(x, y);
     }
 
@@ -131,6 +134,7 @@ public class Snake {
 
     synchronized public Deque<Coordinates> getCoordinates() {
         Deque<Coordinates> coordinates = new ArrayDeque<>();
+        if (keyPoints.isEmpty()) return null;
         int lastX = keyPoints.peekFirst().getX(), lastY = keyPoints.peekFirst().getY();
 
         coordinates.addFirst(Coordinates.of(lastX, lastY));
@@ -144,9 +148,7 @@ public class Snake {
                 lastY += Math.signum(c.getY());
                 coordinates.addLast(circuitCoordinates(Coordinates.of(lastX, lastY)));
             }
-
         }
-      //  logger.info("coord " + coordinates.toString());
         return coordinates;
     }
 
@@ -159,12 +161,13 @@ public class Snake {
         this.newDirection = direction;
     }
 
-
-
     synchronized public void changeDirection(Direction direction) {
         if (newDirection == direction) return;
         if (this.direction.isOpposite(direction)) return;
         this.newDirection = direction;
     }
 
+    public int getPoints() {
+        return points;
+    }
 }

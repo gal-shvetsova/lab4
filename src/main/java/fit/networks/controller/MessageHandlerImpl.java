@@ -12,11 +12,8 @@ import fit.networks.util.ProtoUtils;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
-import java.util.List;
 import java.util.logging.Logger;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public class MessageHandlerImpl implements MessageHandler {
@@ -61,7 +58,7 @@ public class MessageHandlerImpl implements MessageHandler {
         super();
     }
 
-    public static MessageHandler getMessageHandler() {
+    public static MessageHandler getInstance() {
         if (messageHandler == null) {
             messageHandler = new MessageHandlerImpl();
         }
@@ -78,7 +75,7 @@ public class MessageHandlerImpl implements MessageHandler {
     }
 
     private void handleAck(Message message){
-        MessageControllerImpl.getMessageController().confirmMessage(message);
+        MessageControllerImpl.getInstance().confirmMessage(message);
     }
 
     private void handleState(Message message){
@@ -91,7 +88,10 @@ public class MessageHandlerImpl implements MessageHandler {
         int width = state.getConfig().getWidth();
         GameConfig gameConfig = new GameConfig(width, height, foodStatic, foodPerPlayer, delayMs, deadFoodProb);
 
-        ArrayList<Coordinates> foods = state.getFoodsList().stream().map(x -> Coordinates.of(x.getX(), x.getY())).collect(Collectors.toCollection(ArrayList::new));
+        Deque<Coordinates> foods = state.getFoodsList()
+                .stream()
+                .map(x -> Coordinates.of(x.getX(), x.getY()))
+                .collect(Collectors.toCollection(ArrayDeque::new));
 
         Game game = new Game(gameConfig, foods);
 
@@ -112,7 +112,7 @@ public class MessageHandlerImpl implements MessageHandler {
             s.getPointsList().forEach(x -> keyPoints.addLast(ProtoUtils.getCoordinates(x)));
             snake.setKeyPoints(keyPoints);
             snake.setDirection(ProtoUtils.getDirection(s.getHeadDirection()));
-            game.getGamerById(s.getPlayerId()).setSnake(snake);  //todo: its error
+            game.getGamerById(s.getPlayerId()).setSnake(snake);
         }
 
         GameControllerImpl.getController().setGame(game);
@@ -140,7 +140,7 @@ public class MessageHandlerImpl implements MessageHandler {
         String name = message.getProtoMessage().getJoin().getName();
         GameControllerImpl.getController().hostGame(name, message.getInetAddress(), message.getPort());
         Message ackMessage = new Message(MessageCreator.makeAckMsg(message), message.getInetAddress(), message.getPort());
-        MessageControllerImpl.getMessageController().sendMessage(ackMessage);
+        MessageControllerImpl.getInstance().sendMessage(ackMessage);
 
     }
 
@@ -149,6 +149,14 @@ public class MessageHandlerImpl implements MessageHandler {
     }
 
     private void handleRoleChange(Message message){
+        switch (message.getProtoMessage().getRoleChange().getReceiverRole()){
+            case NORMAL:
+            case VIEWER:
+            case DEPUTY:
+                break;
+            case MASTER:
+                GameControllerImpl.getController().becomeMaster();
+        }
 
     }
 

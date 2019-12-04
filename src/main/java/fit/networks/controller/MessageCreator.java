@@ -5,6 +5,7 @@ import fit.networks.game.Game;
 import fit.networks.game.GameConfig;
 import fit.networks.game.snake.Direction;
 import fit.networks.gamer.Gamer;
+import fit.networks.gamer.Role;
 import fit.networks.protocol.SnakesProto;
 import fit.networks.util.ProtoUtils;
 
@@ -40,7 +41,7 @@ public class MessageCreator {
                                 .setX(point.getX())
                                 .build())
                         .collect(Collectors.toList()))
-                .setState(gamer.isZombie()
+                .setState(gamer.isDead()
                         ? SnakesProto.GameState.Snake.SnakeState.ALIVE
                         : SnakesProto.GameState.Snake.SnakeState.ZOMBIE)
                 .build();
@@ -86,7 +87,7 @@ public class MessageCreator {
         gamePlayer.setPort(gamer.getPort());
         if (gamer.isMaster()) {
             gamePlayer.setRole(SnakesProto.NodeRole.MASTER);
-        } else if (gamer.isZombie()) {
+        } else if (gamer.isDead()) {
             gamePlayer.setRole(SnakesProto.NodeRole.VIEWER);
         } else {
             gamePlayer.setRole(SnakesProto.NodeRole.NORMAL);
@@ -111,7 +112,7 @@ public class MessageCreator {
     private static SnakesProto.GamePlayers.Builder makeGamePlayers(Game game) {
         SnakesProto.GamePlayers.Builder gamePlayers = SnakesProto.GamePlayers.newBuilder();
 
-        for (Gamer gamer : game.getActiveGamers()) {
+        for (Gamer gamer : game.getAliveGamers()) {
             gamePlayers.addPlayers(makeGamePlayer(gamer));
         }
         return gamePlayers;
@@ -124,7 +125,7 @@ public class MessageCreator {
         SnakesProto.GameState.Builder gameStateMsg = SnakesProto.GameState.newBuilder();
         gameStateMsg.setStateOrder(stateOrder.getAndAdd(1));
 
-        for (Gamer g: game.getActiveGamers()) {
+        for (Gamer g: game.getAliveGamers()) {
             gameStateMsg.addSnakes(makeSnake(g));
         }
 
@@ -140,6 +141,17 @@ public class MessageCreator {
         stateMsg.setState(gameStateMsg);
         msg.setState(stateMsg);
         return msg.build();
+    }
+
+    public static SnakesProto.GameMessage makeRoleChangeMessage(Role role){  //зачем это надо если состояние отправляется периодически
+        return SnakesProto.GameMessage
+                .newBuilder()
+                .setMsgSeq(messageSeq.getAndAdd(1))
+                .setRoleChange(SnakesProto.GameMessage.RoleChangeMsg
+                        .newBuilder()
+                        .setReceiverRole(ProtoUtils.getProtoRole(role))
+                        .build())
+                .build();
     }
 
 

@@ -10,6 +10,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.Objects;
 
 public class SnakeGUI extends JFrame implements View {
     private JPanel gamePanel = new JPanel();
@@ -18,7 +19,9 @@ public class SnakeGUI extends JFrame implements View {
     private GameBoard gameBoard = null;
     private GameController controller;
 
-    public SnakeGUI() {
+    private final static SnakeGUI instance = new SnakeGUI();
+
+    private SnakeGUI() {
         super("Snake");
         this.setExtendedState(JFrame.MAXIMIZED_BOTH);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -108,5 +111,9 @@ public class SnakeGUI extends JFrame implements View {
     @Override
     public boolean isStarted() {
         return isStarted;
+    }
+
+    public static SnakeGUI getInstance() {
+        return instance;
     }
 }

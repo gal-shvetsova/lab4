@@ -22,6 +22,7 @@ public class Gamer {
     private Snake snake;
     private Color color;
     private Role role;
+    private boolean isZombie = false;
 
     public Gamer(String name, InetAddress ipAddress, int port, GameConfig gameConfig, Role role) {
         this.name = name;
@@ -33,10 +34,11 @@ public class Gamer {
         this.snake = new Snake(gameConfig.getMaxCoordinates());
         this.role = role;
         Random rand = new Random();
-        int r = rand.nextInt(256);
+/*        int r = rand.nextInt(256);
         int g = rand.nextInt(256);
         int b = rand.nextInt(256);
-        this.color = new Color(r, g, b);  //todo: make it depends by id
+        this.color = new Color(r, g, b);  //todo: make it depends by id*/
+        color = Color.BLACK;
     }
 
     public Gamer(String name, InetAddress ipAddress, int port, GameConfig gameConfig, Role role, int id) {  //todo: make something
@@ -49,10 +51,11 @@ public class Gamer {
         this.snake = new Snake(gameConfig.getMaxCoordinates());
         this.role = role;
         Random rand = new Random();
-        int r = rand.nextInt(256);
+        color = Color.BLACK;
+/*        int r = rand.nextInt(256);
         int g = rand.nextInt(256);
         int b = rand.nextInt(256);
-        this.color = new Color(r, g, b);
+        this.color = new Color(r, g, b);*/
     }
 
     public Gamer(InetAddress inetAddress, int port) {
@@ -84,7 +87,7 @@ public class Gamer {
     }
 
     public int getPoints() {
-        return snake.getCoordinates().size();
+        return snake.getPoints();
     }
 
     public Color getColor() {
@@ -101,7 +104,7 @@ public class Gamer {
     }
 
     public boolean isHead(Coordinates coordinates){
-        return getSnakeHeadCoordinates() == coordinates;
+        return getSnakeHeadCoordinates().equals(coordinates);
     }
 
     public Deque<Coordinates> getSnakeCoordinates() {
@@ -121,28 +124,35 @@ public class Gamer {
         return (((Gamer) gamer).port == port && ((Gamer) gamer).ipAddress == ipAddress);
     }
 
-    public boolean isZombie() {
-        return !snake.isAlive();
+    public boolean isDead() {
+        return snake.getKeyPoints().isEmpty();
     }
 
     public boolean isMaster() {
         return role == Role.MASTER;
     }
 
-    public void becomeZombie() {
-        Logger logger = Logger.getLogger("gamer");
-        logger.info("die");
-        snake.die();
+    public boolean isDeputy() {
+        return role == Role.DEPUTY;
+    }
+
+    public boolean isViewer(){
+        return role == Role.VIEWER;
+    }
+
+    public void becomeDying() {
+        snake.setDyingState();
     }
 
     public void makeStep() {
         snake.run();
     }
 
-
-
     public void moveSnake(Direction direction) {
         snake.changeDirection(direction);
     }
 
+    public void setRole(Role role) {
+        this.role = role;
+    }
 }

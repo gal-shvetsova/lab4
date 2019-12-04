@@ -24,5 +24,7 @@ public interface GameController {
     void loadNewState();
 
     void changeSnakeDirection(InetAddress inetAddress, int port, Direction direction);
+
+    void becomeMaster();
 }
 
