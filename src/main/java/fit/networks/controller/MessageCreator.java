@@ -29,9 +29,6 @@ public class MessageCreator {
     }
 
     private static SnakesProto.GameState.Snake makeSnake(Gamer gamer) {
-        Logger logger = Logger.getLogger("proto");
-     //   logger.info(gamer.toString() + " " + gamer.getSnake().getDirection() );
-      //  logger.info(gamer.getId() + " ");
         return SnakesProto.GameState.Snake.newBuilder()
                 .setHeadDirection(ProtoUtils.getProtoDirection(gamer.getSnake().getDirection()))
                 .setPlayerId(gamer.getId())
@@ -67,11 +64,11 @@ public class MessageCreator {
         return SnakesProto.GameMessage.newBuilder()
                 .setMsgSeq(messageSeq.getAndAdd(1))
                 .setJoin(
-                SnakesProto.GameMessage.JoinMsg.newBuilder().setName(name))
+                        SnakesProto.GameMessage.JoinMsg.newBuilder().setName(name))
                 .build();
     }
 
-    public static SnakesProto.GameMessage makeAckMsg(Message message){
+    public static SnakesProto.GameMessage makeAckMsg(Message message) {
         return SnakesProto.GameMessage.newBuilder()
                 .setMsgSeq(message.getProtoMessage().getMsgSeq())
                 .setAck(SnakesProto.GameMessage.AckMsg.newBuilder())
@@ -80,20 +77,14 @@ public class MessageCreator {
 
 
     public static SnakesProto.GamePlayer makeGamePlayer(Gamer gamer) {
-        SnakesProto.GamePlayer.Builder gamePlayer = SnakesProto.GamePlayer.newBuilder();
-        gamePlayer.setName(gamer.getName());
-        gamePlayer.setId(gamer.getId());
-        gamePlayer.setIpAddress(gamer.getIpAddress().getHostAddress()); //TODO: check it
-        gamePlayer.setPort(gamer.getPort());
-        if (gamer.isMaster()) {
-            gamePlayer.setRole(SnakesProto.NodeRole.MASTER);
-        } else if (gamer.isDead()) {
-            gamePlayer.setRole(SnakesProto.NodeRole.VIEWER);
-        } else {
-            gamePlayer.setRole(SnakesProto.NodeRole.NORMAL);
-        }
-        gamePlayer.setScore(gamer.getPoints());
-        return gamePlayer.build();
+        return SnakesProto.GamePlayer.newBuilder()
+                .setName(gamer.getName())
+                .setId(gamer.getId())
+                .setIpAddress(gamer.getIpAddress().getHostAddress())
+                .setPort(gamer.getPort())
+                .setRole(ProtoUtils.getProtoRole(gamer.getRole()))
+                .setScore(gamer.getPoints())
+                .build();
     }
 
     public static SnakesProto.GameMessage makeAnnouncementMessage(Game game) {
@@ -125,11 +116,11 @@ public class MessageCreator {
         SnakesProto.GameState.Builder gameStateMsg = SnakesProto.GameState.newBuilder();
         gameStateMsg.setStateOrder(stateOrder.getAndAdd(1));
 
-        for (Gamer g: game.getAliveGamers()) {
+        for (Gamer g : game.getAliveGamers()) {
             gameStateMsg.addSnakes(makeSnake(g));
         }
 
-        for (Coordinates c: game.getFoodCoordinates()){
+        for (Coordinates c : game.getFoodCoordinates()) {
             SnakesProto.GameState.Coord.Builder coord = SnakesProto.GameState.Coord.newBuilder();
             coord.setX(c.getX());
             coord.setY(c.getY());
@@ -143,7 +134,7 @@ public class MessageCreator {
         return msg.build();
     }
 
-    public static SnakesProto.GameMessage makeRoleChangeMessage(Role role){  //зачем это надо если состояние отправляется периодически
+    public static SnakesProto.GameMessage makeRoleChangeMessage(Role role) {  //зачем это надо если состояние отправляется периодически
         return SnakesProto.GameMessage
                 .newBuilder()
                 .setMsgSeq(messageSeq.getAndAdd(1))

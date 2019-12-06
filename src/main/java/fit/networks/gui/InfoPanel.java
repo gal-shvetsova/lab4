@@ -1,5 +1,6 @@
 package fit.networks.gui;
 
+import fit.networks.controller.GameController;
 import fit.networks.controller.GameControllerImpl;
 import fit.networks.gui.protocol.Protocol;
 
@@ -123,7 +124,7 @@ public class InfoPanel extends JPanel {
         String addressStr = gameInfoStr.substring(indexStartAddress + 1, indexFinishAddress);
         String portStr = gameInfoStr.substring(indexStartPort + 1, indexFinishPort);
         System.out.println(addressStr + portStr);
-        GameControllerImpl.getController().joinGame(addressStr, Integer.parseInt(portStr));
+        GameControllerImpl.getInstance().joinGame(addressStr, Integer.parseInt(portStr));
     }
 
     class MainFormAction extends AbstractAction {
@@ -139,7 +140,7 @@ public class InfoPanel extends JPanel {
                 leaveGameButton.setEnabled(true);
                 newGameButton.setEnabled(false);
             } else if (btn == leaveGameButton) {
-                GameControllerImpl.getController().leaveGame();
+                GameControllerImpl.getInstance().leaveGame();
                 newGameButton.setEnabled(true);
                 leaveGameButton.setEnabled(false);
             } else if (btn == joinGameButton) {

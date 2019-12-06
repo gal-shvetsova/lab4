@@ -1,11 +1,13 @@
 package fit.networks.gamer;
 
+import fit.networks.controller.MessageCreator;
 import fit.networks.game.Coordinates;
 import fit.networks.game.Game;
 import fit.networks.game.GameConfig;
 import fit.networks.game.gamefield.Field;
 import fit.networks.game.snake.Direction;
 import fit.networks.game.snake.Snake;
+import fit.networks.protocol.SnakesProto;
 
 import java.awt.*;
 import java.net.InetAddress;
@@ -155,4 +157,15 @@ public class Gamer {
     public void setRole(Role role) {
         this.role = role;
     }
+
+    public void start(){ this.snake.randomStart();}
+
+    public void addPoints() {
+        snake.addPoints();
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
 }

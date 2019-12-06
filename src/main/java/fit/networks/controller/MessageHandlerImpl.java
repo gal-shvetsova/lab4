@@ -17,12 +17,12 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class MessageHandlerImpl implements MessageHandler {
-    private static MessageHandler messageHandler = null;
+    private static MessageHandlerImpl messageHandler;
+    private final GameController gameController;
     private Logger logger = Logger.getLogger("message handler");
 
     @Override
     public void handle(Message message) {
-     //   logger.info(message.getProtoMessage().getTypeCase().toString());
         switch (message.getProtoMessage().getTypeCase()) {
             case PING:
                 handlePing(message);
@@ -55,7 +55,7 @@ public class MessageHandlerImpl implements MessageHandler {
     }
 
     private MessageHandlerImpl() {
-        super();
+        this.gameController = GameControllerImpl.getInstance();
     }
 
     public static MessageHandler getInstance() {
@@ -66,12 +66,12 @@ public class MessageHandlerImpl implements MessageHandler {
     }
 
     private void handlePing(Message message){
-        GameControllerImpl.getController().addAliveGamer(message.getInetAddress(), message.getPort());
+        gameController.addAliveGamer(message.getInetAddress(), message.getPort());
     }
 
     private void handleSteer(Message message){
-        logger.info("handle steer");
-        GameControllerImpl.getController().changeSnakeDirection(message.getInetAddress(), message.getPort(), ProtoUtils.getDirection(message.getProtoMessage().getSteer().getDirection()));
+     //   logger.info("handle steer");
+        gameController.changeSnakeDirection(message.getInetAddress(), message.getPort(), ProtoUtils.getDirection(message.getProtoMessage().getSteer().getDirection()));
     }
 
     private void handleAck(Message message){
@@ -98,6 +98,7 @@ public class MessageHandlerImpl implements MessageHandler {
         try {
             for (SnakesProto.GamePlayer player : state.getPlayers().getPlayersList()) {
                 InetAddress inetAddress = InetAddress.getByName(player.getIpAddress());
+             //   logger.info(player.getRole().name());
                 Gamer gamer = new Gamer(player.getName(), inetAddress, player.getPort(), gameConfig, ProtoUtils.getRole(player.getRole()), player.getId());
                 game.addGamer(gamer);
 
@@ -115,8 +116,8 @@ public class MessageHandlerImpl implements MessageHandler {
             game.getGamerById(s.getPlayerId()).setSnake(snake);
         }
 
-        GameControllerImpl.getController().setGame(game);
-        GameControllerImpl.getController().loadNewState();
+        gameController.setGame(game);
+        gameController.loadNewState();
         //todo: use state id
 
     }
@@ -129,16 +130,16 @@ public class MessageHandlerImpl implements MessageHandler {
             }
             InetAddress masterAddress = InetAddress.getByName(master.getIpAddress());
             int masterPort = master.getPort();
-            GameControllerImpl.getController().addAvailableGame(masterAddress, masterPort, message.getProtoMessage().getAnnouncement());
+            gameController.addAvailableGame(masterAddress, masterPort, message.getProtoMessage().getAnnouncement());
         } catch (UnknownHostException ex) {
             ex.printStackTrace();
         }
     }
 
     private void handleJoin(Message message){
-        logger.info("handle join");
+  //     logger.info("handle join");
         String name = message.getProtoMessage().getJoin().getName();
-        GameControllerImpl.getController().hostGame(name, message.getInetAddress(), message.getPort());
+        gameController.hostGame(name, message.getInetAddress(), message.getPort());
         Message ackMessage = new Message(MessageCreator.makeAckMsg(message), message.getInetAddress(), message.getPort());
         MessageControllerImpl.getInstance().sendMessage(ackMessage);
 
@@ -153,9 +154,10 @@ public class MessageHandlerImpl implements MessageHandler {
             case NORMAL:
             case VIEWER:
             case DEPUTY:
+                gameController.becomeDeputy();
                 break;
             case MASTER:
-                GameControllerImpl.getController().becomeMaster();
+                gameController.becomeMaster();
         }
 
     }

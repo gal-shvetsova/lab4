@@ -14,6 +14,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 
 public class MessageControllerImpl implements MessageController {
 
+    private static boolean initialized = false;
     Thread receiveThread;
     Thread receiveMulticastThread;
     private MulticastSocket socket;
@@ -68,15 +69,19 @@ public class MessageControllerImpl implements MessageController {
         receiveMulticastThread.start();
     }
 
-    public static void startMessageController(InetAddress inetAddress, int port) {
+    public static void init(InetAddress inetAddress, int port) {
+        initialized  = true;
         try {
             messageController = new MessageControllerImpl(inetAddress, port);
-        } catch (IOException ex) {
-            ex.printStackTrace();
+        } catch (Exception ex) {
+            throw new RuntimeException("Could not initialized MessageControllerImpl", ex);
         }
     }
 
     public static MessageController getInstance() {
+        if(!initialized){
+            throw new RuntimeException("MessageController's not initialized");
+        }
         return messageController;
     }
 

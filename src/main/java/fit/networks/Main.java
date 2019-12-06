@@ -1,6 +1,7 @@
 package fit.networks;
 
 import fit.networks.controller.*;
+import fit.networks.gui.InfoPanel;
 import fit.networks.gui.SnakeGUI;
 import fit.networks.view.View;
 
@@ -8,41 +9,57 @@ import fit.networks.view.View;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 
 public class Main {
     static final Logger logger = Logger.getLogger("Main");
-    private static final View snakeGui = SnakeGUI.getInstance();
 
-    private static GameController controller;
-    private static MessageController messageController = MessageControllerImpl.getInstance();
-    private static MessageHandler messageHandler = MessageHandlerImpl.getInstance();
-    private static ProtoMessagesListener protoMessagesListener = ProtoMessagesListenerImpl.getListener();
-
-    public static void main(String[] args) {
+    private static GameController gameController;
 
 
-        if (args.length < 3) {
-            System.out.println("You should write name, " +
-                    " the host IP address and port");
-            return;
+    static class Args {
+        String name;
+        InetAddress inetAddress;
+        int port;
+
+        public Args(String name, InetAddress inetAddress, int port) {
+            this.name = name;
+            this.inetAddress = inetAddress;
+            this.port = port;
         }
-            String name = args[0];
-        InetAddress ipAddress = null;
-        try {
-            ipAddress = InetAddress.getByName(args[1]);
-        } catch (UnknownHostException e) {
-            logger.log(Level.OFF, "pizdec", e);
-            System.exit(Level.OFF.intValue());
+
+        public int getPort() {
+            return port;
         }
-        int port = Integer.parseInt(args[2]);
 
-        controller = GameControllerImpl.getController(name, ipAddress, port, snakeGui);
+        public InetAddress getInetAddress() {
+            return inetAddress;
+        }
 
-        controller.start();
-
+        public String getName() {
+            return name;
+        }
     }
 
+    public static void main(String[] args) throws UnknownHostException {
+        Args parsedArgs = getArgs(args);
+        MessageControllerImpl.init(parsedArgs.getInetAddress(), parsedArgs.getPort());
+        View snakeGui = SnakeGUI.getInstance();
+
+        GameControllerImpl.init(
+                parsedArgs.getName(),
+                parsedArgs.getInetAddress(),
+                parsedArgs.getPort(),
+                snakeGui
+        );
+        GameControllerImpl.getInstance().start();
+    }
+
+    static Args getArgs(String[] args) throws UnknownHostException {
+        if (args.length < 3) {
+            throw new IllegalArgumentException("You should write name, the host IP address and port");
+        }
+        return new Args(args[0], InetAddress.getByName(args[1]), Integer.parseInt(args[2]));
+    }
 
 
 }

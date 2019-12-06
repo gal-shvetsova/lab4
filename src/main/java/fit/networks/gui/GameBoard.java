@@ -41,7 +41,6 @@ public class GameBoard extends JPanel implements ActionListener {
         if (field == null) return;
         for (int i = 0; i < field.getWidth(); i++) {
             for (int j = 0; j < field.getHeight(); j++) {
-                logger.info(field.getColor(i,j) + " ");
                 g.setColor(field.getColor(i, j));
                 g.fillRect(i * DOTSIZE, j * DOTSIZE, DOTSIZE, DOTSIZE);
             }

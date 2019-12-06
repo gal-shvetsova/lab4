@@ -23,7 +23,7 @@ public class ProtoMessagesListenerImpl implements ProtoMessagesListener {
         }, 0, Protocol.getMessageReceivingInterval());
     }
 
-    public static ProtoMessagesListener getListener() {
+    public static ProtoMessagesListener getInstance() {
         if (listener == null) {
             listener = new ProtoMessagesListenerImpl();
         }

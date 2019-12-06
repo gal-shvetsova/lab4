@@ -10,16 +10,16 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.util.Objects;
 
 public class SnakeGUI extends JFrame implements View {
+    private static SnakeGUI snakeGui;
     private JPanel gamePanel = new JPanel();
     private InfoPanel infoPanel = new InfoPanel();
     private boolean isStarted = false;
     private GameBoard gameBoard = null;
     private GameController controller;
 
-    private final static SnakeGUI instance = new SnakeGUI();
+    private static SnakeGUI instance;
 
     private SnakeGUI() {
         super("Snake");
@@ -37,26 +37,26 @@ public class SnakeGUI extends JFrame implements View {
         pane.add(infoPanel, BorderLayout.EAST);
         gamePanel.addKeyListener(new TAdapter());
     }
-    private class TAdapter extends KeyAdapter {
+    private static class TAdapter extends KeyAdapter {
 
         @Override
         public void keyPressed(KeyEvent e) {
             int key = e.getKeyCode();
             switch (key) {
                 case KeyEvent.VK_LEFT: {
-                    controller.keyActivity(-1, 0);
+                    GameControllerImpl.getInstance().keyActivity(-1, 0);
                     break;
                 }
                 case KeyEvent.VK_RIGHT: {
-                    controller.keyActivity(1, 0);
+                    GameControllerImpl.getInstance().keyActivity(1, 0);
                     break;
                 }
                 case KeyEvent.VK_DOWN: {
-                    controller.keyActivity(0, 1);
+                    GameControllerImpl.getInstance().keyActivity(0, 1);
                     break;
                 }
                 case KeyEvent.VK_UP: {
-                    controller.keyActivity(0, -1);
+                    GameControllerImpl.getInstance().keyActivity(0, -1);
                     break;
                 }
             }
@@ -95,7 +95,7 @@ public class SnakeGUI extends JFrame implements View {
     }
 
     public void showForm() {
-        this.controller = GameControllerImpl.getController();
+        this.controller = GameControllerImpl.getInstance();
         this.setVisible(true);
     }
 
@@ -114,6 +114,9 @@ public class SnakeGUI extends JFrame implements View {
     }
 
     public static SnakeGUI getInstance() {
-        return instance;
+        if(instance == null) {
+            snakeGui = new SnakeGUI();
+        }
+        return snakeGui;
     }
 }

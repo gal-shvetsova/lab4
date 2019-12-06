@@ -1,5 +1,6 @@
 package fit.networks.gui;
 
+import fit.networks.controller.GameController;
 import fit.networks.controller.GameControllerImpl;
 import fit.networks.game.GameConfig;
 import fit.networks.gui.protocol.Protocol;
@@ -65,6 +66,11 @@ class GameParamsForm extends JFrame {
 
     class NewGameAction extends AbstractAction {
         private static final long serialVersionUID = 1L;
+        private GameController gameController;
+
+        NewGameAction() {
+            this.gameController = GameControllerImpl.getInstance();
+        }
 
         private void performDataAndStartGame() {
             int parsedWidth, parsedHeight, parsedFoodStatic, parsedDelay;
@@ -79,7 +85,7 @@ class GameParamsForm extends JFrame {
 
                 gameConfig = new GameConfig(parsedWidth, parsedHeight, parsedFoodStatic, parsedFoodPerPlayer, parsedDelay,
                         parsedDeadFoodProb);
-                GameControllerImpl.getController().startNewGame(gameConfig);
+                gameController.startNewGame(gameConfig);
             } catch (NumberFormatException ex) {
                 System.out.println("err"); //TODO : make message
             } catch (IllegalArgumentException argEx) {

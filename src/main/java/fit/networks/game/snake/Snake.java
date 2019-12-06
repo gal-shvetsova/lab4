@@ -20,7 +20,6 @@ public class Snake {
     public Snake(Coordinates maxCoordinates) {
         this.maxCoordinates = maxCoordinates;
         logger = Logger.getLogger("snake");
-        randomStart();
     }
 
     synchronized public Direction getDirection() {
@@ -29,6 +28,7 @@ public class Snake {
 
     synchronized public void run() {
         if (isAlive()) {
+
             Coordinates oldHead = keyPoints.pollFirst();
             Coordinates newHead = oldHead.move(newDirection);
 
@@ -67,8 +67,9 @@ public class Snake {
             } else {
                 isGrowing = false;
             }
+        } else {
+            die();
         }
-        die();
     }
 
     synchronized public boolean isAlive() {
@@ -104,7 +105,6 @@ public class Snake {
         direction = Direction.getRandomDirection();
         newDirection = direction;
         setStartCoordinates(x, y);
-        System.out.println("x " + x + " y " + y);
     }
 
     public boolean isHead(Coordinates coordinates){
@@ -169,5 +169,13 @@ public class Snake {
 
     public int getPoints() {
         return points;
+    }
+
+    public void addPoints() {
+        points++;
+    }
+
+    public boolean isDying() {
+        return isDying;
     }
 }

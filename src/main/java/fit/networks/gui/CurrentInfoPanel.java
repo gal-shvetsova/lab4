@@ -47,7 +47,7 @@ public class CurrentInfoPanel extends JPanel {
     }
 
     void setGameInfo(GameConfig gameConfig) {
-        leadingValueLabel.setText(GameControllerImpl.getController().getName());
+        leadingValueLabel.setText(GameControllerImpl.getInstance().getName());
         foodValueLabel.setText(gameConfig.getFoodStatic() + " + " + gameConfig.getFoodPerPlayer() + "x");
         sizeValueLabel.setText(gameConfig.getWidth() + " * " + gameConfig.getHeight());
 
