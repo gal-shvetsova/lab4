@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 public class MessageHandlerImpl implements MessageHandler {
     private static MessageHandlerImpl messageHandler;
     private final GameController gameController;
-    private Logger logger = Logger.getLogger("message handler");
 
     @Override
     public void handle(Message message) {
@@ -70,8 +69,17 @@ public class MessageHandlerImpl implements MessageHandler {
     }
 
     private void handleSteer(Message message){
-     //   logger.info("handle steer");
-        gameController.changeSnakeDirection(message.getInetAddress(), message.getPort(), ProtoUtils.getDirection(message.getProtoMessage().getSteer().getDirection()));
+        InetAddress inetAddress = message.getInetAddress();
+        int port = message.getPort();
+        gameController.changeSnakeDirection(inetAddress, port, ProtoUtils.getDirection(message.getProtoMessage().getSteer().getDirection()));
+        sendAck(message);
+    }
+
+    private void sendAck(Message message) {
+        InetAddress inetAddress = message.getInetAddress();
+        int port = message.getPort();
+        Message ack = new Message(MessageCreator.makeAckMsg(message, -1, -1), inetAddress, port);
+        MessageControllerImpl.getInstance().sendMessage(ack, false);
     }
 
     private void handleAck(Message message){
@@ -79,7 +87,14 @@ public class MessageHandlerImpl implements MessageHandler {
     }
 
     private void handleState(Message message){
+        int stateId = -1;
+        if (gameController.getGame() != null) {
+           stateId = gameController.getGame().getGameStateId();
+        }
         SnakesProto.GameState state = message.getProtoMessage().getState().getState();
+        if (stateId > state.getStateOrder()){
+            return;
+        }
         double deadFoodProb = state.getConfig().getDeadFoodProb();
         int delayMs = state.getConfig().getStateDelayMs();
         double foodPerPlayer = state.getConfig().getFoodPerPlayer();
@@ -98,8 +113,7 @@ public class MessageHandlerImpl implements MessageHandler {
         try {
             for (SnakesProto.GamePlayer player : state.getPlayers().getPlayersList()) {
                 InetAddress inetAddress = InetAddress.getByName(player.getIpAddress());
-             //   logger.info(player.getRole().name());
-                Gamer gamer = new Gamer(player.getName(), inetAddress, player.getPort(), gameConfig, ProtoUtils.getRole(player.getRole()), player.getId());
+                Gamer gamer = new Gamer(player.getName(), inetAddress, player.getPort(), gameConfig, ProtoUtils.getRole(player.getRole()), player.getId(), player.getScore());
                 game.addGamer(gamer);
 
             }
@@ -114,12 +128,10 @@ public class MessageHandlerImpl implements MessageHandler {
             snake.setKeyPoints(keyPoints);
             snake.setDirection(ProtoUtils.getDirection(s.getHeadDirection()));
             game.getGamerById(s.getPlayerId()).setSnake(snake);
+            snake.setState(ProtoUtils.getState(s.getState()));
         }
-
         gameController.setGame(game);
         gameController.loadNewState();
-        //todo: use state id
-
     }
 
     private void handleAnnouncement(Message message) {
@@ -137,29 +149,30 @@ public class MessageHandlerImpl implements MessageHandler {
     }
 
     private void handleJoin(Message message){
-  //     logger.info("handle join");
         String name = message.getProtoMessage().getJoin().getName();
         gameController.hostGame(name, message.getInetAddress(), message.getPort());
-        Message ackMessage = new Message(MessageCreator.makeAckMsg(message), message.getInetAddress(), message.getPort());
-        MessageControllerImpl.getInstance().sendMessage(ackMessage);
-
+        sendAck(message);
     }
 
     private void handleError(Message message){
-
+        sendAck(message);
     }
 
     private void handleRoleChange(Message message){
         switch (message.getProtoMessage().getRoleChange().getReceiverRole()){
             case NORMAL:
             case VIEWER:
+                gameController.becomeViewer(message.getInetAddress(), message.getPort());
             case DEPUTY:
                 gameController.becomeDeputy();
                 break;
             case MASTER:
                 gameController.becomeMaster();
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + message.getProtoMessage().getRoleChange().getReceiverRole());
         }
-
+        sendAck(message);
     }
 
     private void handleTypeNotSet(Message message){

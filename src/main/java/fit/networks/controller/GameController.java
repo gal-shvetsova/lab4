@@ -28,5 +28,11 @@ public interface GameController {
     void becomeMaster();
 
     void becomeDeputy();
+
+    Game getGame();
+
+    void requestViewing();
+
+    void becomeViewer(InetAddress inetAddress, int port);
 }
 

@@ -90,6 +90,7 @@ public class SnakeGUI extends JFrame implements View {
         gamePanel.removeAll();
         gameBoard = null;
         infoPanel.getCurrentInfoPanel().hideGameInfo();
+        isStarted = false;
         this.pack();
         this.repaint();
     }
@@ -111,6 +112,11 @@ public class SnakeGUI extends JFrame implements View {
     @Override
     public boolean isStarted() {
         return isStarted;
+    }
+
+    @Override
+    public void loadRatingTable(String[][] ratingTable) {
+        infoPanel.updateRating(ratingTable);
     }
 
     public static SnakeGUI getInstance() {

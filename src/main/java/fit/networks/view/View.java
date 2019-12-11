@@ -13,4 +13,6 @@ public interface View {
     void showErrorMessage();
 
     boolean isStarted();
+
+    void loadRatingTable(String[][] ratingTable);
 }

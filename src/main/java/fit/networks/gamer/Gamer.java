@@ -9,6 +9,7 @@ import fit.networks.game.snake.Direction;
 import fit.networks.game.snake.Snake;
 import fit.networks.protocol.SnakesProto;
 
+import javax.annotation.Nullable;
 import java.awt.*;
 import java.net.InetAddress;
 import java.util.Deque;
@@ -25,52 +26,23 @@ public class Gamer {
     private Color color;
     private Role role;
     private boolean isZombie = false;
+    private int score = 0;
 
-    public Gamer(String name, InetAddress ipAddress, int port, GameConfig gameConfig, Role role) {
+    public Gamer(String name, InetAddress ipAddress, int port, GameConfig gameConfig, Role role, @Nullable Integer id,
+                 @Nullable Integer score) {
         this.name = name;
         this.ipAddress = ipAddress;
         this.port = port;
-        nextId+=2;  //todo: do something with that
-        Random random = new Random();
-        this.id = random.nextInt();
+        nextId+=2;
+        this.id = nextId;
         this.snake = new Snake(gameConfig.getMaxCoordinates());
         this.role = role;
-        Random rand = new Random();
-/*        int r = rand.nextInt(256);
-        int g = rand.nextInt(256);
-        int b = rand.nextInt(256);
-        this.color = new Color(r, g, b);  //todo: make it depends by id*/
         color = Color.BLACK;
+        if (id != null && score != null) {
+            this.id = id;
+            this.score = score;
+        }
     }
-
-    public Gamer(String name, InetAddress ipAddress, int port, GameConfig gameConfig, Role role, int id) {  //todo: make something
-        this.name = name;
-        this.ipAddress = ipAddress;
-        this.port = port;
-        nextId+=2;  //todo: do something with that
-        Random random = new Random();
-        this.id = id;
-        this.snake = new Snake(gameConfig.getMaxCoordinates());
-        this.role = role;
-        Random rand = new Random();
-        color = Color.BLACK;
-/*        int r = rand.nextInt(256);
-        int g = rand.nextInt(256);
-        int b = rand.nextInt(256);
-        this.color = new Color(r, g, b);*/
-    }
-
-    public Gamer(InetAddress inetAddress, int port) {
-        this.ipAddress = inetAddress;
-        this.port = port;
-    }
-
-
-    public static Gamer getNewGameMaster(String name, InetAddress inetAddress, int port, GameConfig gameConfig) {
-        nextId = 2;
-        return new Gamer(name, inetAddress, port, gameConfig, Role.MASTER);
-    }
-
 
     public String getName() {
         return name;
@@ -88,8 +60,8 @@ public class Gamer {
         return port;
     }
 
-    public int getPoints() {
-        return snake.getPoints();
+    public int getScore(){
+        return score;
     }
 
     public Color getColor() {
@@ -123,11 +95,15 @@ public class Gamer {
         if (!(gamer instanceof Gamer)) {
             return false;
         }
-        return (((Gamer) gamer).port == port && ((Gamer) gamer).ipAddress == ipAddress);
+        return (((Gamer) gamer).port == port && ((Gamer) gamer).ipAddress.equals(ipAddress));
     }
 
     public boolean isDead() {
         return snake.getKeyPoints().isEmpty();
+    }
+
+    public boolean isDying(){
+        return snake.isDying();
     }
 
     public boolean isMaster() {
@@ -160,8 +136,8 @@ public class Gamer {
 
     public void start(){ this.snake.randomStart();}
 
-    public void addPoints() {
-        snake.addPoints();
+    public void addScore() {
+        score++;
     }
 
     public Role getRole() {

@@ -4,6 +4,7 @@ import fit.networks.controller.GameController;
 import fit.networks.controller.GameControllerImpl;
 import fit.networks.gui.protocol.Protocol;
 
+import javax.annotation.Nullable;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -19,10 +20,11 @@ public class InfoPanel extends JPanel {
     private JTable allGamesTable = new JTable(allGames, Protocol.getAllGamesColumnsHeaders());
     private JButton newGameButton = new JButton(new MainFormAction());
     private JButton leaveGameButton = new JButton(new MainFormAction());
+    private JButton leaveAndViewButton = new JButton(new MainFormAction());
     private JButton joinGameButton = new JButton(new MainFormAction());
     private CurrentInfoPanel currentInfoPanel = new CurrentInfoPanel();
     private int row = -1;
-    private Logger logger = Logger.getLogger("info panel");
+
     public InfoPanel() {
         super();
         initInfoPanel();
@@ -40,6 +42,7 @@ public class InfoPanel extends JPanel {
         leaveGameButton.setEnabled(false);
         joinGameButton.setText(Protocol.getJoinGameButtonName());
         joinGameButton.setName(Protocol.getJoinGameButtonName());
+        leaveAndViewButton.setText(Protocol.getLeaveAndViewButtonName());
 
     }
 
@@ -56,7 +59,14 @@ public class InfoPanel extends JPanel {
             model.addColumn(Protocol.getAllGamesColumnsHeaders()[i]);
         }
 
+        DefaultTableModel ratingModel = new DefaultTableModel();
+        for (int i = 0; i < 3; i++) {
+            ratingModel.addColumn(Protocol.getRatingColumnsHeaders()[i]);
+        }
+
+
         allGamesTable = new JTable(model);
+        ratingTable = new JTable(ratingModel);
         allGamesTable.setFocusable(true);
         allGamesTable.requestFocus();
         allGamesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -75,7 +85,7 @@ public class InfoPanel extends JPanel {
         add(currentInfoPanel, c);
         add(newGameButton, c);
         add(leaveGameButton, c);
-
+        add(leaveAndViewButton,c);
         c.fill = GridBagConstraints.HORIZONTAL;
         add(new JScrollPane(allGamesTable), c);
         requestFocus();
@@ -95,11 +105,9 @@ public class InfoPanel extends JPanel {
         String strSource= e.getSource().toString();
         int start = strSource.indexOf("{")+1,
                 stop  = strSource.length()-1;
-        System.out.println(strSource);
         String num = strSource.substring(start, stop);
         if (!num.equals(""))
             row = Integer.parseInt(num);
-        System.out.println(row);
     }
 
     public void updateTable(String[][] games) {
@@ -127,13 +135,27 @@ public class InfoPanel extends JPanel {
         GameControllerImpl.getInstance().joinGame(addressStr, Integer.parseInt(portStr));
     }
 
+
+    @Nullable
+    public void updateRating(String[][] ratingTable) {
+        DefaultTableModel dm = (DefaultTableModel) this.ratingTable.getModel();
+        int rowCount = dm.getRowCount();
+        for (int i = rowCount - 1; i >= 0; i--) {  //todo: make it delete
+            dm.removeRow(i);
+        }
+        if (ratingTable != null) {
+            for (String[] gamer : ratingTable) {
+                dm.addRow(gamer);
+            }
+        }
+    }
+
     class MainFormAction extends AbstractAction {
         private static final long serialVersionUID = 1L;
 
         @Override
         public void actionPerformed(ActionEvent actionEvent) {
             JButton btn = (JButton) actionEvent.getSource();
-            logger.info(btn.getName() + (btn == joinGameButton));
             if (btn == newGameButton) {
                 GameParamsForm newGameForm = new GameParamsForm();
                 newGameForm.setVisible(true);
@@ -145,6 +167,8 @@ public class InfoPanel extends JPanel {
                 leaveGameButton.setEnabled(false);
             } else if (btn == joinGameButton) {
                 sendJoinRequest(allGamesTable.getModel().getValueAt(row, 0));
+            } else if (btn == leaveAndViewButton){
+                GameControllerImpl.getInstance().requestViewing();
             }
         }
     }

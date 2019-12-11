@@ -16,7 +16,9 @@ public class ProtoMessagesListenerImpl implements ProtoMessagesListener {
             public void run() {
                 Queue<Message> messages = MessageControllerImpl.getInstance().receiveMessages();
                 for (Message message: messages) {
-                    MessageHandlerImpl.getInstance().handle(message);
+                    if (GameControllerImpl.getInstance() != null) {
+                        MessageHandlerImpl.getInstance().handle(message);
+                    }
                 }
             }
 

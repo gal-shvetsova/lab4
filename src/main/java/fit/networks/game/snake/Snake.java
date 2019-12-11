@@ -13,13 +13,12 @@ public class Snake {
     private Direction direction;
     private Direction newDirection;
     private boolean isGrowing = false;
-    private Logger logger;
-    private int points = 0;
     private boolean isDying = false;
+    private State state = State.ALIVE;
+
 
     public Snake(Coordinates maxCoordinates) {
         this.maxCoordinates = maxCoordinates;
-        logger = Logger.getLogger("snake");
     }
 
     synchronized public Direction getDirection() {
@@ -28,10 +27,8 @@ public class Snake {
 
     synchronized public void run() {
         if (isAlive()) {
-
             Coordinates oldHead = keyPoints.pollFirst();
             Coordinates newHead = oldHead.move(newDirection);
-
 
             if (direction == newDirection) {
                 Coordinates node = keyPoints.pollFirst();
@@ -134,12 +131,16 @@ public class Snake {
 
     synchronized public Deque<Coordinates> getCoordinates() {
         Deque<Coordinates> coordinates = new ArrayDeque<>();
-        if (keyPoints.isEmpty()) return null;
+        if (keyPoints.isEmpty()) {
+            return null;
+        }
         int lastX = keyPoints.peekFirst().getX(), lastY = keyPoints.peekFirst().getY();
 
         coordinates.addFirst(Coordinates.of(lastX, lastY));
         for (Coordinates c : keyPoints) {
-            if (c.getX() == lastX && c.getY() == lastY) continue;
+            if (c.getX() == lastX && c.getY() == lastY) {
+                continue;
+            }
             for (int i = 0; i < Math.abs(c.getX()); i++) {
                 lastX += Math.signum(c.getX());
                 coordinates.addLast(circuitCoordinates(Coordinates.of(lastX, lastY)));
@@ -167,15 +168,19 @@ public class Snake {
         this.newDirection = direction;
     }
 
-    public int getPoints() {
-        return points;
-    }
-
-    public void addPoints() {
-        points++;
-    }
-
     public boolean isDying() {
         return isDying;
+    }
+
+    public void becomeZombie() {
+        state = State.ZOMBIE;
+    }
+
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
     }
 }

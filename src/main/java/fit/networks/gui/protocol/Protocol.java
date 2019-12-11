@@ -78,4 +78,8 @@ public class Protocol {
     public static String getJoinGameButtonName() {
         return "Присоединиться";
     }
+
+    public static String getLeaveAndViewButtonName() {
+        return "Наблюдать";
+    }
 }

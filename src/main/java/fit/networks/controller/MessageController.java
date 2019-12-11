@@ -8,8 +8,8 @@ import java.util.Queue;
 
 public interface MessageController {
      Message receiveMessage();
-     void sendMessage(Message message);
+     void sendMessage(Message message, boolean needConfirm);
      Queue<Message> receiveMessages();
-     void addMessageToConfirm(Message message);
      void confirmMessage(Message message);
+     void resendMessages(InetAddress inetAddress, int port);
 }

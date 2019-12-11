@@ -1,29 +1,29 @@
 package fit.networks.game;
 
-import fit.networks.controller.Message;
-import fit.networks.controller.MessageControllerImpl;
-import fit.networks.controller.MessageCreator;
 import fit.networks.game.gamefield.Cell;
 import fit.networks.game.gamefield.Field;
+import fit.networks.game.gamefield.GameCell;
 import fit.networks.gamer.Gamer;
-import fit.networks.gamer.Role;
 import fit.networks.protocol.Protocol;
-import fit.networks.protocol.SnakesProto;
+import org.apache.commons.lang3.tuple.Pair;
 
+import java.awt.*;
 import java.net.InetAddress;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class Game {
-
+    private final static Logger logger = Logger.getLogger("Game");
     private GameConfig gameConfig;
     private Queue<Gamer> gamers = new ConcurrentLinkedQueue<>();
-    //private  activeGamersPerCycle = new ArrayList<>();
+    private Queue<Pair<InetAddress, Integer>> activeGamersPerCycle = new ConcurrentLinkedQueue<>();
     private Deque<Coordinates> foods = new ArrayDeque<>();
-    private final Logger logger = Logger.getLogger("Game");
+    private AtomicInteger gameStateId = new AtomicInteger(0);
 
     public Optional<Gamer> getGamerByAddress(InetAddress inetAddress, int port) {
         return gamers.stream().filter(x -> x.getIpAddress().equals(inetAddress) && x.getPort() == port).findFirst();
@@ -33,14 +33,13 @@ public class Game {
         return gamers.stream().filter(x -> x.getId() == id).findFirst().orElse(null);
     }
 
-    public boolean hasDeputy() {
-        return gamers.stream().allMatch(Gamer::isDeputy);
+    public boolean deputyAbsent() {
+        return !gamers.stream().allMatch(Gamer::isDeputy);
     }
 
     public Optional<Gamer> getDeputy() {
         return gamers.stream().filter(Gamer::isDeputy).findFirst();
     }
-
 
     public Game(GameConfig gameConfig) {
         this.gameConfig = gameConfig;
@@ -51,18 +50,12 @@ public class Game {
         this.foods = foods;
     }
 
-    public void setGamers(Queue<Gamer> gamers) {
-        this.gamers = gamers;
-    }
-
     public void addAliveGamer(InetAddress inetAddress, int port) {
-        this.gamers.add(new Gamer(inetAddress, port));
+        this.activeGamersPerCycle.add(Pair.of(inetAddress, port));
     }
 
-    public List<Gamer> getAliveGamers() {
-        return gamers.stream()
-                .filter(Predicate.not(Gamer::isViewer))
-                .collect(Collectors.toList());
+    synchronized public Queue<Gamer> getAliveGamers() {
+        return gamers;
     }
 
     public GameConfig getGameConfig() {
@@ -81,104 +74,132 @@ public class Game {
         return foods;
     }
 
-
     synchronized public Field makeMasterRepresentation() {
-        Field field = new Field(gameConfig.getMaxCoordinates(), new Cell(Protocol.getNoneValue(), Protocol.getNoneColor()));
-        field.setCells(foods, new Cell(Protocol.getFoodValue(), Protocol.getFoodColor()));
-        removeZombies();
+        Field field = new Field(gameConfig.getMaxCoordinates(), GameCell.getNoneCell());
+        int neededFoods = gameConfig.getFoodStatic() + (int) (gameConfig.getFoodPerPlayer() * gamers.size());
+        generateFood(neededFoods, field);
+        drawFood(field);
+        logger.info(foods.toString() + " foos ");
         for (Gamer g : gamers) {
+            logger.info(gamers.size() + " ");
             for (Coordinates c : g.getSnakeCoordinates()) {
-                if (field.getValue(c) == Protocol.getFoodValue() && g.getSnake().isHead(c)) {
+                logger.info("cell " + g.getSnakeCoordinates().toString());
+                if (GameCell.isFood(field.in(c)) && g.getSnake().isHead(c)) {
                     g.getSnake().grow();
-                    field.setCells(c, new Cell(g.getId(), g.getColor()));
+                    g.addScore();
+                    drawSnakePoint(field, c, g);
                     foods.remove(c);
-                } else if (field.getValue(c) != Protocol.getFoodValue() && field.getValue(c) != Protocol.getNoneValue()) {
-                    Gamer anotherGamer = getGamerById(field.getValue(c));
+                } else if (GameCell.isEmpty(field.in(c))) {
+                    drawSnakePoint(field, c, g);
+                    //   logger.info("none");
+                } else {
+                    Gamer anotherGamer = getGamerById(GameCell.getId(field.in(c)));
+                    //   logger.info("another snake " + anotherGamer.getId());
                     if (anotherGamer.isHead(c)) {
                         anotherGamer.becomeDying();
-                        requestNewMaster(anotherGamer);
                     } else {
-                        anotherGamer.addPoints();
+                        anotherGamer.addScore();
                     }
+                    //   logger.info("current snake " + anotherGamer.getId());
                     if (g.isHead(c)) {
                         g.becomeDying();
-                        requestNewMaster(g);
                     } else {
-                        g.addPoints();
+                        g.addScore();
                     }
-                } else {
-                    field.setCells(c, new Cell(g.getId(), g.getColor()));
                 }
             }
         }
 
-        gamers.stream().filter(x-> x.getSnake().isDying()).forEach(g -> {
-            field.setCells(g.getSnakeCoordinates(), new Cell(Protocol.getNoneValue(), Protocol.getNoneColor()));
+        getDying().forEach(g -> {
+            field.setCells(g.getSnakeCoordinates(), GameCell.getNoneCell());
         });
 
-//        removeZombies();
-
-        int neededFoods = gameConfig.getFoodStatic() + (int) (gameConfig.getFoodPerPlayer() * gamers.size());
-        int width = gameConfig.getMaxCoordinates().getX();
-        int height = gameConfig.getMaxCoordinates().getY();
-
-        while (this.foods.size() < neededFoods) {
-            Coordinates newFoods = Coordinates.getRandomCoordinates(width, height);
-            while (field.getValue(newFoods) != Protocol.getNoneValue()) {
-                newFoods = Coordinates.getRandomCoordinates(width, height);
-            }
-            this.foods.add(newFoods);
-            field.setCells(newFoods, new Cell(Protocol.getFoodValue(), Protocol.getFoodColor()));
-        }
+        neededFoods = gameConfig.getFoodStatic() + (int) (gameConfig.getFoodPerPlayer() * gamers.size());
+        generateFood(neededFoods, field);
 
         return field;
     }
 
-    private void requestNewMaster(Gamer g) {
-        if (g.isMaster()) {
-            SnakesProto.GameMessage protoMessage = MessageCreator.makeRoleChangeMessage(Role.DEPUTY);
-            if (getDeputy().isEmpty()) return;
-            Gamer deputy = getDeputy().get();
-            deputy.setRole(Role.MASTER);
-            Message message = new Message(protoMessage, deputy.getIpAddress(), deputy.getPort());
-            MessageControllerImpl.getInstance().sendMessage(message);
-        }
-    }
+    private void generateFood(int count, Field field){
+        int width = gameConfig.getMaxCoordinates().getX();
+        int height = gameConfig.getMaxCoordinates().getY();
+        while (this.foods.size() < count) {
+            Coordinates newFoods = Coordinates.getRandomCoordinates(width, height);
+            while (GameCell.isEmpty(field.in(newFoods))) {
+                newFoods = Coordinates.getRandomCoordinates(width, height);
+                this.foods.add(newFoods);
+                drawFood(field);
+            }
 
-    private void registerMaster(Gamer gamer){
-        gamer.setRole(Role.MASTER);
+        }
     }
 
     public Field makeRepresentation() {
-        Field field = new Field(gameConfig.getMaxCoordinates(), new Cell(Protocol.getNoneValue(), Protocol.getNoneColor()));
-        field.setCells(foods, new Cell(Protocol.getFoodValue(), Protocol.getFoodColor()));
-        removeZombies();
-        for (Gamer g : gamers) {
-            for (Coordinates c : g.getSnakeCoordinates()) {
-                if (!g.isDead()) {
-                    field.setCells(c, new Cell(g.getId(), g.getColor()));
-                }
-            }
-        }
+        Field field = new Field(gameConfig.getMaxCoordinates(), GameCell.getNoneCell());
+        drawFood(field);
+        gamers.stream()
+                .filter(Predicate.not(Gamer::isDead))
+                .forEach(gamer -> drawSnake(field, gamer));
         return field;
     }
 
-    public List<Gamer> getZombies(){
+    private void drawFood(Field field) {
+        field.setCells(foods, GameCell.getFoodCell());
+    }
+
+    private void drawSnake(Field field, Gamer g) {
+        field.setCells(g.getSnakeCoordinates(), GameCell.getGamerCell(g.getId(), g.getColor()));
+    }
+
+    private void drawSnakePoint(Field field, Coordinates coordinates, Gamer gamer) {
+        field.setCells(coordinates, GameCell.getGamerCell(gamer.getId(), gamer.getColor()));
+    }
+
+    public List<Gamer> getDying() {
         return gamers.stream()
-                .filter(Gamer::isDead)
+                .filter(Gamer::isDying)
                 .collect(Collectors.toList());
     }
 
-    public void removeZombies() {
-        gamers = gamers.stream()
-                .filter(gamer -> !gamer.isDead())
+    public Queue<Gamer> getDead() {
+        return gamers.stream()
+                .filter(Gamer::isDead)
+                .filter(gamer -> gamer.getSnake().isDying())
                 .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
     }
 
-    public Gamer getMaster() {
+    synchronized public void removeDead() {
+        gamers = gamers.stream()
+                .filter(gamer ->
+                        !gamer.getSnake().getKeyPoints().isEmpty() && !gamer.getSnake().isDying() && !gamer.isViewer())
+                .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
+    }
+
+    public Optional<Gamer> getMaster() {
         return gamers.stream()
                 .filter(Gamer::isMaster)
-                .findFirst()
-                .orElse(null);
+                .findFirst();
+    }
+
+    public int getAndAddStateId() {
+        return gameStateId.getAndAdd(1);
+    }
+
+    public int getGameStateId() {
+        return gameStateId.get();
+    }
+
+    public Iterable<? extends Gamer> getSorted() {
+        return gamers.stream()
+                .sorted(Comparator.comparingInt(Gamer::getScore))
+                .collect(Collectors.toList());
+    }
+
+    synchronized public void makeZombiesFromInactiveGamers() {
+        for (Gamer gamer : gamers) {
+            if (activeGamersPerCycle.contains(Pair.of(gamer.getIpAddress(), gamer.getPort()))) {
+                gamer.getSnake().becomeZombie();
+            }
+        }
     }
 }

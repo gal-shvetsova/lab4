@@ -2,6 +2,7 @@ package fit.networks.util;
 
 import fit.networks.game.Coordinates;
 import fit.networks.game.snake.Direction;
+import fit.networks.game.snake.State;
 import fit.networks.gamer.Role;
 import fit.networks.protocol.SnakesProto;
 
@@ -71,4 +72,25 @@ public class ProtoUtils {
         return Coordinates.of(c.getX(), c.getY());
     }
 
+    public static SnakesProto.GameState.Snake.SnakeState getProtoState(State state) {
+        switch (state){
+            case ALIVE:
+                return SnakesProto.GameState.Snake.SnakeState.ALIVE;
+            case ZOMBIE:
+                return SnakesProto.GameState.Snake.SnakeState.ZOMBIE;
+            default:
+                throw new IllegalStateException("Unexpected value: " + state);
+        }
+    }
+
+    public static State getState(SnakesProto.GameState.Snake.SnakeState state){
+        switch (state){
+            case ALIVE:
+                return State.ALIVE;
+            case ZOMBIE:
+                return State.ZOMBIE;
+            default:
+                throw new IllegalStateException("Unexpected value: " + state);
+        }
+    }
 }

@@ -10,12 +10,10 @@ import fit.networks.protocol.SnakesProto;
 import fit.networks.util.ProtoUtils;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class MessageCreator {
     private static AtomicInteger messageSeq = new AtomicInteger(0);
-    private static AtomicInteger stateOrder = new AtomicInteger(0);
 
     private static SnakesProto.GameConfig makeGameConfig(GameConfig gameConfig) {
         SnakesProto.GameConfig.Builder gameConfigProto = SnakesProto.GameConfig.newBuilder();
@@ -38,9 +36,7 @@ public class MessageCreator {
                                 .setX(point.getX())
                                 .build())
                         .collect(Collectors.toList()))
-                .setState(gamer.isDead()
-                        ? SnakesProto.GameState.Snake.SnakeState.ALIVE
-                        : SnakesProto.GameState.Snake.SnakeState.ZOMBIE)
+                .setState(ProtoUtils.getProtoState(gamer.getSnake().getState()))
                 .build();
     }
 
@@ -68,9 +64,11 @@ public class MessageCreator {
                 .build();
     }
 
-    public static SnakesProto.GameMessage makeAckMsg(Message message) {
+    public static SnakesProto.GameMessage makeAckMsg(Message message, int receiverId, int senderId) {
         return SnakesProto.GameMessage.newBuilder()
                 .setMsgSeq(message.getProtoMessage().getMsgSeq())
+                .setReceiverId(receiverId)
+                .setSenderId(senderId)
                 .setAck(SnakesProto.GameMessage.AckMsg.newBuilder())
                 .build();
     }
@@ -83,7 +81,7 @@ public class MessageCreator {
                 .setIpAddress(gamer.getIpAddress().getHostAddress())
                 .setPort(gamer.getPort())
                 .setRole(ProtoUtils.getProtoRole(gamer.getRole()))
-                .setScore(gamer.getPoints())
+                .setScore(gamer.getScore())
                 .build();
     }
 
@@ -114,7 +112,7 @@ public class MessageCreator {
         msg.setMsgSeq(messageSeq.getAndAdd(1));
         SnakesProto.GameMessage.StateMsg.Builder stateMsg = SnakesProto.GameMessage.StateMsg.newBuilder();
         SnakesProto.GameState.Builder gameStateMsg = SnakesProto.GameState.newBuilder();
-        gameStateMsg.setStateOrder(stateOrder.getAndAdd(1));
+        gameStateMsg.setStateOrder(game.getAndAddStateId());
 
         for (Gamer g : game.getAliveGamers()) {
             gameStateMsg.addSnakes(makeSnake(g));
@@ -134,16 +132,16 @@ public class MessageCreator {
         return msg.build();
     }
 
-    public static SnakesProto.GameMessage makeRoleChangeMessage(Role role) {  //зачем это надо если состояние отправляется периодически
+    public static SnakesProto.GameMessage makeRoleChangeMessage(Role role, int receiverId, int senderId) {
         return SnakesProto.GameMessage
                 .newBuilder()
                 .setMsgSeq(messageSeq.getAndAdd(1))
+                .setReceiverId(receiverId)
+                .setSenderId(senderId)
                 .setRoleChange(SnakesProto.GameMessage.RoleChangeMsg
                         .newBuilder()
                         .setReceiverRole(ProtoUtils.getProtoRole(role))
                         .build())
                 .build();
     }
-
-
 }

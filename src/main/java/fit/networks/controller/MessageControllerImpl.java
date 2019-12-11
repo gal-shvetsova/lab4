@@ -10,6 +10,8 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.PriorityBlockingQueue;
 
 public class MessageControllerImpl implements MessageController {
@@ -29,7 +31,17 @@ public class MessageControllerImpl implements MessageController {
     private MessageControllerImpl(InetAddress senderAddress, int senderPort) throws IOException {
         this.socket = new MulticastSocket(senderPort);
         this.socket.setInterface(senderAddress);
+        Timer timer = new Timer();
+        TimerTask resendTask = new TimerTask() {
+            @Override
+            public void run() {
+                for (Message message : messagesToConfirm) {
+                    sendMessage(message, false);
+                }
+            }
+        };
 
+        timer.schedule(resendTask,1000, 1000);
         receiveMulticastThread = new Thread(() -> {
             int port = Protocol.getMulticastPort();
             try (MulticastSocket socket = new MulticastSocket(port)) {
@@ -70,7 +82,7 @@ public class MessageControllerImpl implements MessageController {
     }
 
     public static void init(InetAddress inetAddress, int port) {
-        initialized  = true;
+        initialized = true;
         try {
             messageController = new MessageControllerImpl(inetAddress, port);
         } catch (Exception ex) {
@@ -79,7 +91,7 @@ public class MessageControllerImpl implements MessageController {
     }
 
     public static MessageController getInstance() {
-        if(!initialized){
+        if (!initialized) {
             throw new RuntimeException("MessageController's not initialized");
         }
         return messageController;
@@ -96,9 +108,12 @@ public class MessageControllerImpl implements MessageController {
 
 
     @Override
-    public void sendMessage(Message message) {
+    public void sendMessage(Message message, boolean needConfirm) {
         byte[] byteMessage = message.getProtoMessage().toByteArray();
         DatagramPacket packet = new DatagramPacket(byteMessage, byteMessage.length, message.getInetAddress(), message.getPort());
+        if (needConfirm){
+            messagesToConfirm.add(message);
+        }
         try {
             socket.send(packet);
         } catch (IOException e) {
@@ -114,12 +129,15 @@ public class MessageControllerImpl implements MessageController {
     }
 
     @Override
-    public void addMessageToConfirm(Message message) {
-        messagesToConfirm.add(message);
-    }
-
-    @Override
     public void confirmMessage(Message message) {
         messagesToConfirm.removeIf(message1 -> message1.getProtoMessage().getMsgSeq() == message.getProtoMessage().getMsgSeq()); //todo check
     }
+
+    @Override
+    synchronized public void resendMessages(InetAddress inetAddress, int port) {
+        for (Message message : receivedMessages) {
+            Message msg = new Message(message.getProtoMessage(), inetAddress, port);
+        }
+    }
+
 }
