@@ -8,12 +8,6 @@ public enum Direction {
     LEFT,
     RIGHT;
 
-    /**
-     * TODO; i dont understand this fcking shit pls explain it to me
-     * @param x
-     * @param y
-     * @return
-     */
     public static Direction getDirection(int x, int y){
         switch (x){
             case -1:

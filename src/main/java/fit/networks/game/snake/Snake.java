@@ -26,7 +26,7 @@ public class Snake {
     }
 
     synchronized public void run() {
-        if (isAlive()) {
+        if (isAlive() && keyPoints.size() >= 2) {
             Coordinates oldHead = keyPoints.pollFirst();
             Coordinates newHead = oldHead.move(newDirection);
 

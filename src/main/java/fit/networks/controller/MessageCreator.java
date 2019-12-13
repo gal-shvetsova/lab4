@@ -86,16 +86,11 @@ public class MessageCreator {
     }
 
     public static SnakesProto.GameMessage makeAnnouncementMessage(Game game) {
-        SnakesProto.GameMessage.AnnouncementMsg.Builder announcementMsg = SnakesProto.GameMessage.AnnouncementMsg.newBuilder();
-        SnakesProto.GameMessage.Builder msg = SnakesProto.GameMessage.newBuilder();
-        SnakesProto.GamePlayers.Builder gamePlayers = makeGamePlayers(game);
-
-        announcementMsg.setPlayers(gamePlayers);
-        announcementMsg.setConfig(makeGameConfig(game.getGameConfig()));
-
-        msg.setMsgSeq(messageSeq.getAndAdd(1));
-        msg.setAnnouncement(announcementMsg);
-        return msg.build();
+        return SnakesProto.GameMessage.newBuilder()
+                .setAnnouncement(SnakesProto.GameMessage.AnnouncementMsg.newBuilder()
+                        .setPlayers(makeGamePlayers(game))
+                        .setConfig(makeGameConfig(game.getGameConfig())).build())
+                .setMsgSeq(messageSeq.getAndAdd(1)).build();
     }
 
     private static SnakesProto.GamePlayers.Builder makeGamePlayers(Game game) {

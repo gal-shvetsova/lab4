@@ -1,17 +1,14 @@
 package fit.networks.gui;
 
-import fit.networks.controller.GameController;
 import fit.networks.controller.GameControllerImpl;
 import fit.networks.gui.protocol.Protocol;
 
-import javax.annotation.Nullable;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.util.logging.Logger;
 
 public class InfoPanel extends JPanel {
     private Object[][] rating = new String[][]{{"0", "1", "2"}};
@@ -19,7 +16,6 @@ public class InfoPanel extends JPanel {
     private JTable ratingTable = new JTable(rating, Protocol.getRatingColumnsHeaders());
     private JTable allGamesTable = new JTable(allGames, Protocol.getAllGamesColumnsHeaders());
     private JButton newGameButton = new JButton(new MainFormAction());
-    private JButton leaveGameButton = new JButton(new MainFormAction());
     private JButton leaveAndViewButton = new JButton(new MainFormAction());
     private JButton joinGameButton = new JButton(new MainFormAction());
     private CurrentInfoPanel currentInfoPanel = new CurrentInfoPanel();
@@ -37,9 +33,6 @@ public class InfoPanel extends JPanel {
     private void initButtons() {
         newGameButton.setName(Protocol.getNewGameButtonName());
         newGameButton.setText(Protocol.getNewGameButtonName());
-        leaveGameButton.setName(Protocol.getLeaveGameButtonName());
-        leaveGameButton.setText(Protocol.getLeaveGameButtonName());
-        leaveGameButton.setEnabled(false);
         joinGameButton.setText(Protocol.getJoinGameButtonName());
         joinGameButton.setName(Protocol.getJoinGameButtonName());
         leaveAndViewButton.setText(Protocol.getLeaveAndViewButtonName());
@@ -84,7 +77,6 @@ public class InfoPanel extends JPanel {
         add(new JScrollPane(ratingTable));
         add(currentInfoPanel, c);
         add(newGameButton, c);
-        add(leaveGameButton, c);
         add(leaveAndViewButton,c);
         c.fill = GridBagConstraints.HORIZONTAL;
         add(new JScrollPane(allGamesTable), c);
@@ -92,11 +84,7 @@ public class InfoPanel extends JPanel {
         add(joinGameButton, c);
         ListSelectionModel selectionModel = allGamesTable.getSelectionModel();
 
-        selectionModel.addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
-                handleSelectionEvent(e);
-            }
-        });
+        selectionModel.addListSelectionListener(this::handleSelectionEvent);
     }
 
     protected void handleSelectionEvent(ListSelectionEvent e) {
@@ -136,11 +124,10 @@ public class InfoPanel extends JPanel {
     }
 
 
-    @Nullable
     public void updateRating(String[][] ratingTable) {
         DefaultTableModel dm = (DefaultTableModel) this.ratingTable.getModel();
         int rowCount = dm.getRowCount();
-        for (int i = rowCount - 1; i >= 0; i--) {  //todo: make it delete
+        for (int i = rowCount - 1; i >= 0; i--) {
             dm.removeRow(i);
         }
         if (ratingTable != null) {
@@ -158,17 +145,17 @@ public class InfoPanel extends JPanel {
             JButton btn = (JButton) actionEvent.getSource();
             if (btn == newGameButton) {
                 GameParamsForm newGameForm = new GameParamsForm();
-                newGameForm.setVisible(true);
-                leaveGameButton.setEnabled(true);
-                newGameButton.setEnabled(false);
-            } else if (btn == leaveGameButton) {
-                GameControllerImpl.getInstance().leaveGame();
-                newGameButton.setEnabled(true);
-                leaveGameButton.setEnabled(false);
+                if (!SnakeGUI.getInstance().isStarted()) {
+                    newGameForm.setVisible(true);
+                }
             } else if (btn == joinGameButton) {
-                sendJoinRequest(allGamesTable.getModel().getValueAt(row, 0));
+                if (!SnakeGUI.getInstance().isStarted()) {
+                    sendJoinRequest(allGamesTable.getModel().getValueAt(row, 0));
+                }
             } else if (btn == leaveAndViewButton){
-                GameControllerImpl.getInstance().requestViewing();
+                if (SnakeGUI.getInstance().isStarted()) {
+                    GameControllerImpl.getInstance().requestViewing();
+                }
             }
         }
     }

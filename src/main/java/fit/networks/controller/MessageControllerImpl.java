@@ -23,10 +23,12 @@ public class MessageControllerImpl implements MessageController {
     private static MessageController messageController = null;
 
     private PriorityBlockingQueue<Message> receivedMessages = new PriorityBlockingQueue<>(
-            Protocol.getMessageQueueCapacity(), (o1, o2) -> (int) (o1.getProtoMessage().getMsgSeq() - o2.getProtoMessage().getMsgSeq()));
+            Protocol.getMessageQueueCapacity(), (o1, o2) ->
+                (int) (o1.getProtoMessage().getMsgSeq() - o2.getProtoMessage().getMsgSeq()));
 
     private PriorityBlockingQueue<Message> messagesToConfirm = new PriorityBlockingQueue<>(
-            Protocol.getMessageQueueCapacity(), (o1, o2) -> (int) (o1.getProtoMessage().getMsgSeq() - o2.getProtoMessage().getMsgSeq()));
+            Protocol.getMessageQueueCapacity(), (o1, o2) ->
+            (int) (o1.getProtoMessage().getMsgSeq() - o2.getProtoMessage().getMsgSeq()));
 
     private MessageControllerImpl(InetAddress senderAddress, int senderPort) throws IOException {
         this.socket = new MulticastSocket(senderPort);
@@ -42,6 +44,7 @@ public class MessageControllerImpl implements MessageController {
         };
 
         timer.schedule(resendTask,1000, 1000);
+
         receiveMulticastThread = new Thread(() -> {
             int port = Protocol.getMulticastPort();
             try (MulticastSocket socket = new MulticastSocket(port)) {
@@ -58,9 +61,10 @@ public class MessageControllerImpl implements MessageController {
                     receivedMessages.add(new Message(protoMessage, packet.getAddress(), packet.getPort()));
                 }
             } catch (Exception e) {
-                this.socket.close(); //TODO: make error
+                this.socket.close();
             }
         });
+
         receiveThread = new Thread(() -> {
             try {
                 socket.setInterface(senderAddress);
@@ -96,16 +100,6 @@ public class MessageControllerImpl implements MessageController {
         }
         return messageController;
     }
-
-    @Override
-    public Message receiveMessage() {
-        try {
-            return receivedMessages.take();
-        } catch (InterruptedException e) {
-            throw new RuntimeException("queue was broken", e);
-        }
-    }
-
 
     @Override
     public void sendMessage(Message message, boolean needConfirm) {

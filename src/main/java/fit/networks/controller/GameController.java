@@ -6,12 +6,12 @@ import fit.networks.game.snake.Direction;
 import fit.networks.protocol.SnakesProto;
 
 import java.net.InetAddress;
+import java.util.Optional;
 
 public interface GameController {
     void startNewGame(GameConfig gameConfig);
     void keyActivity(int x, int y);
     String getName();
-    void leaveGame();
     void start();
     void addAvailableGame(InetAddress inetAddress, int port, SnakesProto.GameMessage.AnnouncementMsg message);
     void addAliveGamer(InetAddress inetAddress, int port);
@@ -29,7 +29,7 @@ public interface GameController {
 
     void becomeDeputy();
 
-    Game getGame();
+    Optional<Game> getGame();
 
     void requestViewing();
 

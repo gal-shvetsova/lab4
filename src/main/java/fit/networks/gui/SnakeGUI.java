@@ -65,6 +65,9 @@ public class SnakeGUI extends JFrame implements View {
     }
 
     public void loadNewField(Field field) {
+        if (!isStarted){
+            return;
+        }
         if (gameBoard != null)
             gameBoard.doDrawing(field);
     }
@@ -91,6 +94,7 @@ public class SnakeGUI extends JFrame implements View {
         gameBoard = null;
         infoPanel.getCurrentInfoPanel().hideGameInfo();
         isStarted = false;
+        showDeadForm();
         this.pack();
         this.repaint();
     }
@@ -101,7 +105,7 @@ public class SnakeGUI extends JFrame implements View {
     }
 
     public void showDeadForm() {
-        //todo: make small message about dying
+        JOptionPane.showMessageDialog(null, "You are dead");
     }
 
     @Override

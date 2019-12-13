@@ -13,6 +13,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -69,9 +70,9 @@ public class MessageHandlerImpl implements MessageHandler {
     }
 
     private void handleSteer(Message message){
-        InetAddress inetAddress = message.getInetAddress();
-        int port = message.getPort();
-        gameController.changeSnakeDirection(inetAddress, port, ProtoUtils.getDirection(message.getProtoMessage().getSteer().getDirection()));
+        gameController.changeSnakeDirection(message.getInetAddress(),
+                message.getPort(),
+                ProtoUtils.getDirection(message.getProtoMessage().getSteer().getDirection()));
         sendAck(message);
     }
 
@@ -88,9 +89,11 @@ public class MessageHandlerImpl implements MessageHandler {
 
     private void handleState(Message message){
         int stateId = -1;
-        if (gameController.getGame() != null) {
-           stateId = gameController.getGame().getGameStateId();
+
+        if (gameController.getGame().isPresent()) {
+           stateId = gameController.getGame().get().getGameStateId();
         }
+
         SnakesProto.GameState state = message.getProtoMessage().getState().getState();
         if (stateId > state.getStateOrder()){
             return;
@@ -127,7 +130,7 @@ public class MessageHandlerImpl implements MessageHandler {
             s.getPointsList().forEach(x -> keyPoints.addLast(ProtoUtils.getCoordinates(x)));
             snake.setKeyPoints(keyPoints);
             snake.setDirection(ProtoUtils.getDirection(s.getHeadDirection()));
-            game.getGamerById(s.getPlayerId()).setSnake(snake);
+            game.getGamerById(s.getPlayerId()).ifPresent(gamer -> gamer.setSnake(snake));
             snake.setState(ProtoUtils.getState(s.getState()));
         }
         gameController.setGame(game);
@@ -136,13 +139,14 @@ public class MessageHandlerImpl implements MessageHandler {
 
     private void handleAnnouncement(Message message) {
         try {
-            SnakesProto.GamePlayer master = ProtoHelper.getMaster(message.getProtoMessage().getAnnouncement().getPlayers());
+            SnakesProto.GameMessage.AnnouncementMsg announcement = message.getProtoMessage().getAnnouncement();
+            SnakesProto.GamePlayer master = ProtoHelper.getMaster(announcement.getPlayers());
             if (master == null) {
                 return;
             }
             InetAddress masterAddress = InetAddress.getByName(master.getIpAddress());
             int masterPort = master.getPort();
-            gameController.addAvailableGame(masterAddress, masterPort, message.getProtoMessage().getAnnouncement());
+            gameController.addAvailableGame(masterAddress, masterPort, announcement);
         } catch (UnknownHostException ex) {
             ex.printStackTrace();
         }

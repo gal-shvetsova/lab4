@@ -25,10 +25,9 @@ public class ProtoMessagesListenerImpl implements ProtoMessagesListener {
         }, 0, Protocol.getMessageReceivingInterval());
     }
 
-    public static ProtoMessagesListener getInstance() {
+    public static void subscribe() {
         if (listener == null) {
             listener = new ProtoMessagesListenerImpl();
         }
-        return listener;
     }
 }

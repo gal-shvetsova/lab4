@@ -1,9 +1,9 @@
 package fit.networks.controller;
 
+import com.google.common.collect.Streams;
 import fit.networks.game.Game;
 import fit.networks.game.GameConfig;
 import fit.networks.game.snake.Direction;
-import fit.networks.game.snake.State;
 import fit.networks.gamer.Gamer;
 import fit.networks.gamer.Role;
 import fit.networks.protocol.ProtoHelper;
@@ -15,7 +15,10 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.*;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
@@ -28,13 +31,12 @@ public class GameControllerImpl implements GameController {
     private final String name;
     private final InetAddress inetAddress;
     private int port;
-    private Game game;
+    private Optional<Game> game;
     private ConcurrentMap<Pair<InetAddress, Integer>, SnakesProto.GameMessage.AnnouncementMsg> availableServers = new ConcurrentHashMap<>();  //запущенные игры
-    private Timer timer = new Timer();
+    private Timer timer;
     private TimerTask messageSenderTask;
     private TimerTask remover = new RemoveGamersTask();
     private GUIGameUpdater guiUpdater = new GUIGameUpdater();
-    private final GUIServersUpdater guiServersUpdater = new GUIServersUpdater();
     private static GameController gameController = null;
 
     private GameControllerImpl(int port,
@@ -45,54 +47,47 @@ public class GameControllerImpl implements GameController {
         this.inetAddress = inetAddress;
         this.port = port;
         this.snakeGUI = snakeGUI;
-        this.game = null;
-        ProtoMessagesListenerImpl.getInstance();
+        this.game = Optional.empty();
+        ProtoMessagesListenerImpl.subscribe();
         timer = new Timer();
-        timer.schedule(guiServersUpdater, 100, 3000);
+        timer.schedule(new GUIServersUpdater(), 100, 3000);
         messageSenderTask = new SenderTask();
     }
 
     private class RemoveGamersTask extends TimerTask {
         @Override
         public void run() {
-            game.makeZombiesFromInactiveGamers();
+            game.ifPresent(Game::makeZombiesFromInactiveGamers);
         }
     }
 
     private class SenderTask extends TimerTask {
         @Override
         public void run() {
-            try {
-                if (getCurrentGamer().isEmpty()) {
-                    return;
+            MessageController instance = MessageControllerImpl.getInstance();
+            getCurrentGamer().ifPresent(gamer -> {
+                try {
+                    if (gamer.isMaster()) {
+                        InetAddress inetAddress = InetAddress.getByName(Protocol.getMulticastAddressName());
+                        int port = Protocol.getMulticastPort();
+                        SnakesProto.GameMessage protoAnnouncementMessage = MessageCreator.makeAnnouncementMessage(game.orElse(null));
+                        Message announcementMessage = new Message(protoAnnouncementMessage, inetAddress, port);
+                        instance.sendMessage(announcementMessage, false);
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
                 }
-                MessageController instance = MessageControllerImpl.getInstance();
+            });
 
-                if (getCurrentGamer().get().isMaster()) {
-                    InetAddress inetAddress = InetAddress.getByName(Protocol.getMulticastAddressName());
-                    int port = Protocol.getMulticastPort();
-                    SnakesProto.GameMessage protoAnnouncementMessage = MessageCreator.makeAnnouncementMessage(game);
-                    Message announcementMessage = new Message(protoAnnouncementMessage, inetAddress, port);
-                    instance.sendMessage(announcementMessage, false);
-                }
-
-                if (game.getMaster().isEmpty()) {
-                    return;
-                }
-
+            game.flatMap(Game::getMaster).ifPresent(gamer -> {
                 SnakesProto.GameMessage protoMessage = MessageCreator.makePingMessage();
-                InetAddress inetAddress = game.getMaster().get().getIpAddress();
-                int port = game.getMaster().get().getPort();
+                InetAddress inetAddress = gamer.getIpAddress();
+                int port = gamer.getPort();
                 Message message = new Message(protoMessage, inetAddress, port);
                 instance.sendMessage(message, false);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+            });
         }
     }
-
-    ;
-
 
     public static void init(String name, InetAddress inetAddress, int port, View snakeGui) {
         if (gameController == null) {
@@ -116,40 +111,43 @@ public class GameControllerImpl implements GameController {
 
     @Override
     public void addAliveGamer(InetAddress inetAddress, int port) {
-        if (getCurrentGamer().isPresent() && getCurrentGamer().get().isMaster()) {
-            game.addAliveGamer(inetAddress, port);
-        }
+        getCurrentGamer().ifPresent(gamer -> {
+            if (gamer.isMaster()) {
+                game.ifPresent(game -> game.addAliveGamer(inetAddress, port));
+            }
+        });
     }
 
     @Override
     synchronized public void hostGame(String name, InetAddress address, int port) {
-        if (game == null) return;
-        Optional<Gamer> currentGamer = getCurrentGamer();
-        if (currentGamer.isEmpty()) {
-            return;
-        }
-        Gamer gamer = currentGamer.get();
-        if (!gamer.isMaster()) return;
-        Gamer newGamer = new Gamer(name, address, port, game.getGameConfig(), Role.NORMAL, null, null);
-        newGamer.start();
-        game.addGamer(newGamer);
-        if (game.deputyAbsent()) {
-            newGamer.setRole(Role.DEPUTY);
-            Message message = new Message(MessageCreator.makeRoleChangeMessage(Role.DEPUTY, newGamer.getId(), gamer.getId()), inetAddress, port);
-            MessageControllerImpl.getInstance().sendMessage(message, true);
-        }
-        loadNewState();
+        game.ifPresent(game -> getCurrentGamer().ifPresent(gamer -> {
+            if (!gamer.isMaster()) return;
+            Gamer newGamer = new Gamer(name, address, port, game.getGameConfig(), Role.NORMAL, null, null);
+            newGamer.start();
+            game.addGamer(newGamer);
+            if (game.deputyAbsent()) {
+                newGamer.setRole(Role.DEPUTY);
+                Message message = new Message(MessageCreator.makeRoleChangeMessage(Role.DEPUTY,
+                        newGamer.getId(), gamer.getId()), inetAddress, port);
+                MessageControllerImpl.getInstance().sendMessage(message, true);
+            }
+            loadNewState();
+        }));
+
     }
 
     @Override
     synchronized public void setGame(Game game) {
-        if (this.game == null || getCurrentGamer().isEmpty()) {
-            this.game = game;
+        if (this.game.isEmpty() || getCurrentGamer().isEmpty()) {
+            this.game = Optional.of(game);
             return;
         }
 
-        if (getCurrentGamer().get().isMaster()) return;
-        this.game = game;
+        if (getCurrentGamer().get().isMaster()) {
+            return;
+        }
+
+        this.game = Optional.of(game);
         if (getCurrentGamer().isEmpty()) {
             endGame();
         }
@@ -157,48 +155,29 @@ public class GameControllerImpl implements GameController {
 
     @Override
     synchronized public void loadNewState() {
-        if (game == null) return;
-        if (game.getGamerByAddress(inetAddress, port).isEmpty()) {
-            return;
-        }
-        if (game.getGamerByAddress(inetAddress, port).get().isMaster()) return;
+        game.ifPresent(game -> {
+            Optional<Gamer> gamerByAddress = game.getGamerByAddress(inetAddress, port);
+            if (gamerByAddress.isEmpty() || gamerByAddress.get().isMaster() || !game.hasAliveGamers()) {
+                return;
+            }
 
-        if (!game.hasAliveGamers()) return;
-        if (game.getGamerByAddress(inetAddress, port).isEmpty()) {
-            //endGame();
-            return;
-        }
-        if (!snakeGUI.isStarted()) {
-            snakeGUI.startGame(game.getGameConfig());
-        }
-        snakeGUI.loadNewField(game.makeRepresentation());
+            if (!snakeGUI.isStarted()) {
+                snakeGUI.startGame(game.getGameConfig());
+            }
+            snakeGUI.loadNewField(game.makeRepresentation());
+        });
     }
 
     @Override
     synchronized public void changeSnakeDirection(InetAddress inetAddress, int port, Direction direction) {
-        if (game != null && game.getGamerByAddress(inetAddress, port).isPresent()) {
-            game.getGamerByAddress(inetAddress, port).get().moveSnake(direction);
-        }
+        game.flatMap(game -> game.getGamerByAddress(inetAddress, port)).ifPresent(gamer -> gamer.moveSnake(direction));
     }
 
     @Override
     synchronized public void becomeMaster() {
-        logger.info("become master");
-
-        Optional<Gamer> currentGamer = getCurrentGamer();
-        if (currentGamer.isEmpty()) {
-            return;
-        }
-
-        currentGamer.get().setRole(Role.MASTER);
-        game.removeDead();
-
-        guiUpdater = new GUIGameUpdater();
-        messageSenderTask = new SenderTask();
-        remover = new RemoveGamersTask();
-        timer.schedule(guiUpdater, 100, 100);
-        timer.schedule(messageSenderTask, 0, 1000);
-        timer.schedule(remover, 3000, 3000);
+        getCurrentGamer().ifPresent(gamer -> gamer.setRole(Role.MASTER));
+        game.ifPresent(Game::removeDead);
+        scheduleTasks();
     }
 
     @Override
@@ -207,46 +186,41 @@ public class GameControllerImpl implements GameController {
     }
 
     @Override
-    public Game getGame() {
+    public Optional<Game> getGame() {
         return game;
     }
 
     @Override
     public void requestViewing() {
-        if (getCurrentGamer().isPresent() && getCurrentGamer().get().isMaster()) {
-            getCurrentGamer().get().setRole(Role.VIEWER);
-            getCurrentGamer().get().getSnake().setState(State.ZOMBIE);
-            if (game.getDeputy().isEmpty()) {
-                return;
-            }
+        getCurrentGamer().ifPresent(gamer -> {
+            if (gamer.isMaster()) {
+                gamer.setRole(Role.VIEWER);
+                gamer.getSnake().becomeZombie();
+                game.flatMap(Game::getDeputy).ifPresent(deputy -> {
+                    SnakesProto.GameMessage msg = MessageCreator.makeRoleChangeMessage(Role.MASTER,
+                            deputy.getId(), deputy.getId());
+                    Message message = new Message(msg, deputy.getIpAddress(), deputy.getPort());
+                    MessageControllerImpl.getInstance().sendMessage(message, true);
+                });
+            } else {
+                game.flatMap(Game::getMaster).ifPresent(master -> {
+                    SnakesProto.GameMessage msg = MessageCreator.makeRoleChangeMessage(Role.VIEWER,
+                            master.getId(), gamer.getId());
+                    Message message = new Message(msg, master.getIpAddress(), master.getPort());
+                    MessageControllerImpl.getInstance().sendMessage(message, true);
+                });
 
-            Gamer deputy = game.getDeputy().get();
-
-            int id = getCurrentGamer().get().getId();
-            SnakesProto.GameMessage msg = MessageCreator.makeRoleChangeMessage(Role.MASTER, deputy.getId(), id);
-            Message message = new Message(msg, deputy.getIpAddress(), deputy.getPort());
-            MessageControllerImpl.getInstance().sendMessage(message, true);
-        } else {
-            if (game.getMaster().isEmpty()) {
-                return;
             }
-            Gamer master = game.getMaster().get();
-            int id = getCurrentGamer().get().getId();
-            SnakesProto.GameMessage msg = MessageCreator.makeRoleChangeMessage(Role.VIEWER, master.getId(), id);
-            Message message = new Message(msg, master.getIpAddress(), master.getPort());
-            MessageControllerImpl.getInstance().sendMessage(message, true);
-        }
+        });
     }
+
 
     @Override
     public void becomeViewer(InetAddress inetAddress, int port) {
-        if (game.getGamerByAddress(inetAddress, port).isEmpty()){
-            return;
-        }
-
-        Gamer gamer = game.getGamerByAddress(inetAddress, port).get();
-        gamer.setRole(Role.VIEWER);
-        gamer.getSnake().setState(State.ZOMBIE);
+        game.flatMap(game -> game.getGamerByAddress(inetAddress, port)).ifPresent(gamer -> {
+            gamer.setRole(Role.VIEWER);
+            gamer.getSnake().becomeZombie();
+        });
     }
 
     @Override
@@ -256,9 +230,10 @@ public class GameControllerImpl implements GameController {
             InetAddress inetAddress = InetAddress.getByName(addressStr);
             Message message = new Message(MessageCreator.makeJoinMsg(name), inetAddress, port);
             MessageControllerImpl.getInstance().sendMessage(message, true);
+            timer = new Timer();
             timer.schedule(messageSenderTask, 0, 2000);
         } catch (IOException ex) {
-            ex.printStackTrace(); //TODO: gui loads inet address and port as int
+            ex.printStackTrace();
         }
     }
 
@@ -268,7 +243,9 @@ public class GameControllerImpl implements GameController {
             int i = 0;
             for (SnakesProto.GameMessage.AnnouncementMsg msg : availableServers.values()) {
                 SnakesProto.GamePlayer master = ProtoHelper.getMaster(msg.getPlayers());
-                if (master == null) continue;
+                if (master == null) {
+                    continue;
+                }
                 table[i][0] = master.getName() + " [" + master.getIpAddress() + "]" + " [" + master.getPort() + "]";
                 table[i][1] = ((Integer) msg.getPlayers().getPlayersList().size()).toString();
                 table[i][2] = msg.getConfig().getWidth() + " * " + msg.getConfig().getHeight();
@@ -280,13 +257,16 @@ public class GameControllerImpl implements GameController {
         }
 
         synchronized private String[][] makeRatingTable() {
-            if (game == null || game.getAliveGamers().isEmpty()) {
+            if (game.isEmpty() || game.get().getAliveGamers().isEmpty()) {
                 return null;
             }
-            String[][] table = new String[game.getAliveGamers().size()][3];
+
+            Game currentGame = game.get();
+
+            String[][] table = new String[currentGame.getAliveGamers().size()][3];
             int i = 0;
-            for (Gamer gamer : game.getSorted()) {
-                if (i >= table.length){
+            for (Gamer gamer : currentGame.getSorted()) {
+                if (i >= table.length) {
                     break;
                 }
                 table[i][0] = i + "";
@@ -307,31 +287,36 @@ public class GameControllerImpl implements GameController {
     private class GUIGameUpdater extends TimerTask {
         @Override
         synchronized public void run() {
-            for (Gamer gamer : game.getAliveGamers()) {
-                    gamer.makeStep();
+            if (game.isEmpty()) {
+                return;
+            }
+
+            for (Gamer gamer : game.get().getAliveGamers()) {
+                gamer.makeStep();
 
                 if (gamer.isMaster()) {
-                    snakeGUI.loadNewField(game.makeMasterRepresentation());
-                    game.getDying().forEach(g -> endGame(g));
-                    if (game == null) return;
+                    game.get().getDying().forEach(g -> endGame(g));
+                    if (game.isEmpty()) {
+                        return;
+                    }
+                    snakeGUI.loadNewField(game.get().makeMasterRepresentation());
                 }
 
-                if (game.hasAliveGamers()) {
-                    if (game.deputyAbsent() && game.getAliveGamers().size() > 1) {
-                        Optional<Gamer> deputy = game.getAliveGamers().stream().filter(gamer1 -> !gamer1.isMaster() && !gamer1.isViewer()).findFirst();
-                        Optional<Gamer> currentGamer = getCurrentGamer();
-                        if (deputy.isPresent() && currentGamer.isPresent()) {
-                            SnakesProto.GameMessage roleMsg = MessageCreator.makeRoleChangeMessage(Role.DEPUTY, deputy.get().getId(), currentGamer.get().getId());
-                            deputy.get().setRole(Role.DEPUTY);
-                            Message roleMessage = new Message(roleMsg, deputy.get().getIpAddress(), deputy.get().getPort());
-                            MessageControllerImpl.getInstance().sendMessage(roleMessage, true);
-                        }
-                    }
+                Game currentGame = game.get();
+                if (currentGame.getAliveGamers().size() > 1) {
+                    currentGame.getDeputy().ifPresent(deputy -> getCurrentGamer().ifPresent(currentGamer -> {
+                        SnakesProto.GameMessage roleMsg = MessageCreator
+                                .makeRoleChangeMessage(Role.DEPUTY, deputy.getId(), currentGamer.getId());
+                        deputy.setRole(Role.DEPUTY);
+                        Message roleMessage = new Message(roleMsg, deputy.getIpAddress(), deputy.getPort());
+                        MessageControllerImpl.getInstance().sendMessage(roleMessage, true);
+                    }));
                 }
-                Message message = new Message(MessageCreator.makeStateMessage(game), gamer.getIpAddress(), gamer.getPort());
+                Message message = new Message(MessageCreator.makeStateMessage(currentGame), gamer.getIpAddress(), gamer.getPort());
                 MessageControllerImpl.getInstance().sendMessage(message, false);
             }
         }
+
     }
 
     public String getName() {
@@ -341,111 +326,94 @@ public class GameControllerImpl implements GameController {
     public void startNewGame(GameConfig gameConfig) throws IllegalArgumentException {
         Gamer gamer = new Gamer(name, inetAddress, port, gameConfig, Role.MASTER, null, null);
         gamer.start();
-        game = new Game(gameConfig);
-        game.addGamer(gamer);
-        guiUpdater = new GUIGameUpdater();
-        messageSenderTask = new SenderTask();
-        remover = new RemoveGamersTask();
-        timer.schedule(guiUpdater, 100, 100);
-        timer.schedule(messageSenderTask, 0, 1000);
-        timer.schedule(remover, 3000, 3000);
+        Game newGame = new Game(gameConfig);
+        newGame.addGamer(gamer);
+        game = Optional.of(newGame);
+        scheduleTasks();
         snakeGUI.startGame(gameConfig);
     }
 
-
-    public void endGame() {
-        logger.info("end game");
-        game.removeDead();
-        game = null;
-        snakeGUI.endGame();
-        guiUpdater.cancel();
-        remover.cancel();
-        messageSenderTask.cancel();
+    private void scheduleTasks() {
+        game.ifPresent(game -> {
+            guiUpdater = new GUIGameUpdater();
+            messageSenderTask = new SenderTask();
+            remover = new RemoveGamersTask();
+            timer.schedule(guiUpdater, 100, game.getGameConfig().getDelayMs());
+            timer.schedule(messageSenderTask, 0, 1000);
+            timer.schedule(remover, 3000, 3000);
+        });
     }
 
-    synchronized public void endGame(Gamer g) {
-        logger.info("end game");
-        boolean isCurrent = false;
-        int senderId = g.getId();
-        if (g.getPort() == port && g.getIpAddress().equals(inetAddress)) {
-            logger.info("true");
-            isCurrent = true;
-        }
 
-        if (game.getMaster().isPresent() && game.getMaster().get().equals(getCurrentGamer().get())) {
-            logger.info("inside");
-            Optional<Gamer> deputy = game.getDeputy();
-            if (deputy.isEmpty()) return;
-
-            Queue<Gamer> deadGamers = game.getDead();
-
+    synchronized public void endGame() {
+        game.ifPresent(game -> {
             game.removeDead();
+            snakeGUI.endGame();
+            guiUpdater.cancel();
+            remover.cancel();
+            messageSenderTask.cancel();
+        });
+        game = Optional.empty();
 
-            SnakesProto.GameMessage stateMessage = MessageCreator.makeStateMessage(game);
-
-            for (Gamer gamer : game.getAliveGamers()) {
-                Message msgState = new Message(stateMessage, gamer.getIpAddress(), gamer.getPort());
-                MessageControllerImpl.getInstance().sendMessage(msgState, false);
-            }
-
-            for (Gamer gamer : deadGamers) {
-                Message msgState = new Message(stateMessage, gamer.getIpAddress(), gamer.getPort());
-                MessageControllerImpl.getInstance().sendMessage(msgState, false);
-            }
-
-            if (isCurrent) {
-                SnakesProto.GameMessage msg = MessageCreator.makeRoleChangeMessage(Role.MASTER, deputy.get().getId(), senderId);
-                Message message = new Message(msg, deputy.get().getIpAddress(), deputy.get().getPort());
-                MessageControllerImpl.getInstance().sendMessage(message, true);
-            }
-
-        }
-        if (isCurrent) {
-            endGame();
-        }
     }
 
-    public void keyActivity(int x, int y) {  //TODO: rename
-        if (game == null) return;
-        if (getCurrentGamer().isEmpty()) return;
+    synchronized public void endGame(Gamer gamer) {
+        game.ifPresent(game -> getCurrentGamer().ifPresent(currentGamer -> {
+            final boolean isCurrent = gamer.equals(getCurrentGamer().get());
+            if (currentGamer.isMaster()) {
+                Queue<Gamer> deadGamers = game.getDead();
+                game.removeDead();
 
-        if (getCurrentGamer().get().isMaster()) {
-            getCurrentGamer().get().moveSnake(Direction.getDirection(x, y));
-        } else {
-            if (getCurrentGamer().get().isViewer()){
+                SnakesProto.GameMessage stateMessage = MessageCreator.makeStateMessage(game);
+
+                Streams.concat(game.getAliveGamers().stream(), deadGamers.stream())
+                        .forEach(g -> {
+                            Message msgState = new Message(stateMessage, g.getIpAddress(), g.getPort());
+                            MessageControllerImpl.getInstance().sendMessage(msgState, false);
+                        });
+
+                game.getDeputy().ifPresent(deputy -> {
+                    if (isCurrent) {
+                        SnakesProto.GameMessage msg = MessageCreator.makeRoleChangeMessage(Role.MASTER,
+                                deputy.getId(), currentGamer.getId());
+                        Message message = new Message(msg, deputy.getIpAddress(), deputy.getPort());
+                        MessageControllerImpl.getInstance().sendMessage(message, true);
+                    }
+                });
+            }
+            if (isCurrent) {
+                endGame();
+            }
+        }));
+
+    }
+
+    public void keyActivity(int x, int y) {
+        game.ifPresent(game -> getCurrentGamer().ifPresent(gamer -> {
+            if (gamer.isViewer()) {
                 return;
             }
-            SnakesProto.GameMessage protoMsg = MessageCreator.makeSteerMsg(Direction.getDirection(x, y));
-            Optional<Gamer> master = game.getMaster();
-            if (master.isEmpty()) {
-                return;
+            if (gamer.isMaster()) {
+                gamer.moveSnake(Direction.getDirection(x, y));
+            } else {
+                game.getMaster().ifPresent(master -> {
+                    SnakesProto.GameMessage protoMsg = MessageCreator.makeSteerMsg(Direction.getDirection(x, y));
+                    Message message = new Message(protoMsg, master.getIpAddress(), master.getPort());
+                    MessageControllerImpl.getInstance().sendMessage(message, true);
+                });
             }
-            Message message = new Message(protoMsg, master.get().getIpAddress(), master.get().getPort());
-            MessageControllerImpl.getInstance().sendMessage(message, true);
-        }
+        }));
     }
 
     private Optional<Gamer> getCurrentGamer() {
-        ;
-        if (game == null) return Optional.empty();
-        return game.getGamerByAddress(inetAddress, port);
+        if (game.isEmpty()) {
+            return Optional.empty();
+        }
+        return game.get().getGamerByAddress(inetAddress, port);
     }
 
     public void start() {
         snakeGUI.showForm();
-        try {
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
     }
-
-    public void leaveGame() {
-        game = null;
-        messageSenderTask.cancel();
-        guiUpdater.cancel();
-        snakeGUI.endGame();
-    }
-
 }
 

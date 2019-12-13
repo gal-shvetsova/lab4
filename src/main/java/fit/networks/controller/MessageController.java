@@ -7,7 +7,6 @@ import java.net.InetAddress;
 import java.util.Queue;
 
 public interface MessageController {
-     Message receiveMessage();
      void sendMessage(Message message, boolean needConfirm);
      Queue<Message> receiveMessages();
      void confirmMessage(Message message);

@@ -17,7 +17,7 @@ import java.util.Random;
 import java.util.logging.Logger;
 
 public class Gamer {
-    private static int nextId = 2;
+    private static int nextId = 3;
     private String name;
     private int id;
     private InetAddress ipAddress;
@@ -33,7 +33,7 @@ public class Gamer {
         this.name = name;
         this.ipAddress = ipAddress;
         this.port = port;
-        nextId+=2;
+        nextId+=3;
         this.id = nextId;
         this.snake = new Snake(gameConfig.getMaxCoordinates());
         this.role = role;
