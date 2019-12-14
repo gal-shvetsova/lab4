@@ -42,7 +42,6 @@ public class Main {
 
     public static void main(String[] args) throws UnknownHostException {
         Args parsedArgs = getArgs(args);
-        MessageControllerImpl.init(parsedArgs.getInetAddress(), parsedArgs.getPort());
         View snakeGui = SnakeGUI.getInstance();
 
         GameControllerImpl.init(

@@ -139,4 +139,14 @@ public class MessageCreator {
                         .build())
                 .build();
     }
+
+    public static SnakesProto.GameMessage makeErrorMessage(String errorMessage){
+        return SnakesProto.GameMessage
+                .newBuilder()
+                .setMsgSeq(messageSeq.addAndGet(1))
+                .setError(SnakesProto.GameMessage.ErrorMsg
+                        .newBuilder()
+                        .setErrorMessage(errorMessage))
+                .build();
+    }
 }

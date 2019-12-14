@@ -8,8 +8,7 @@ import fit.networks.view.View;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 
 public class SnakeGUI extends JFrame implements View {
     private static SnakeGUI snakeGui;
@@ -24,8 +23,13 @@ public class SnakeGUI extends JFrame implements View {
     private SnakeGUI() {
         super("Snake");
         this.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         initMain();
+        this.addWindowListener( new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent we) {
+                controller.exitGame();
+            }
+        } );
     }
 
     private void initMain() {
@@ -37,6 +41,7 @@ public class SnakeGUI extends JFrame implements View {
         pane.add(infoPanel, BorderLayout.EAST);
         gamePanel.addKeyListener(new TAdapter());
     }
+
     private static class TAdapter extends KeyAdapter {
 
         @Override
@@ -65,7 +70,7 @@ public class SnakeGUI extends JFrame implements View {
     }
 
     public void loadNewField(Field field) {
-        if (!isStarted){
+        if (!isStarted) {
             return;
         }
         if (gameBoard != null)
@@ -109,8 +114,8 @@ public class SnakeGUI extends JFrame implements View {
     }
 
     @Override
-    public void showErrorMessage() {
-
+    public void showErrorMessage(String errorMessage) {
+        JOptionPane.showMessageDialog(null, errorMessage);
     }
 
     @Override
@@ -124,7 +129,7 @@ public class SnakeGUI extends JFrame implements View {
     }
 
     public static SnakeGUI getInstance() {
-        if(instance == null) {
+        if (instance == null) {
             snakeGui = new SnakeGUI();
         }
         return snakeGui;

@@ -1,20 +1,14 @@
 package fit.networks.gamer;
 
-import fit.networks.controller.MessageCreator;
 import fit.networks.game.Coordinates;
-import fit.networks.game.Game;
 import fit.networks.game.GameConfig;
-import fit.networks.game.gamefield.Field;
 import fit.networks.game.snake.Direction;
 import fit.networks.game.snake.Snake;
-import fit.networks.protocol.SnakesProto;
 
 import javax.annotation.Nullable;
 import java.awt.*;
 import java.net.InetAddress;
 import java.util.Deque;
-import java.util.Random;
-import java.util.logging.Logger;
 
 public class Gamer {
     private static int nextId = 3;
@@ -34,7 +28,7 @@ public class Gamer {
         this.ipAddress = ipAddress;
         this.port = port;
         nextId+=3;
-        this.id = nextId;
+        this.id = id == null ? nextId : 3;
         this.snake = new Snake(gameConfig.getMaxCoordinates());
         this.role = role;
         color = Color.BLACK;
@@ -135,6 +129,10 @@ public class Gamer {
     }
 
     public void start(){ this.snake.randomStart();}
+
+    public void start(Coordinates coordinates){
+        snake.setStartCoordinates(coordinates);
+    }
 
     public void addScore() {
         score++;

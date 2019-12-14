@@ -32,6 +32,7 @@ public class Snake {
 
             if (direction == newDirection) {
                 Coordinates node = keyPoints.pollFirst();
+                assert node != null;
                 int x = (int) (node.getX() + Math.signum(node.getX()));
                 int y = (int) (node.getY() + Math.signum(node.getY()));
                 node = Coordinates.of(x, y);
@@ -88,9 +89,10 @@ public class Snake {
     }
 
 
-    synchronized public void setStartCoordinates(int x, int y) {
-        Coordinates head = Coordinates.of(x, y);
+    synchronized public void setStartCoordinates(Coordinates head) {
         keyPoints.addFirst(head);
+        direction = Direction.getRandomDirection();
+        newDirection = direction;
         Coordinates tail = head.move(direction);
         keyPoints.addLast(tail.subtraction(head));
     }
@@ -99,9 +101,7 @@ public class Snake {
         Random random = new Random();
         int x = random.nextInt(maxCoordinates.getX());
         int y = random.nextInt(maxCoordinates.getY());
-        direction = Direction.getRandomDirection();
-        newDirection = direction;
-        setStartCoordinates(x, y);
+        setStartCoordinates(Coordinates.of(x, y));
     }
 
     public boolean isHead(Coordinates coordinates){

@@ -34,5 +34,9 @@ public interface GameController {
     void requestViewing();
 
     void becomeViewer(InetAddress inetAddress, int port);
+
+    void handleError(String errorMessage);
+
+    void exitGame();
 }
 

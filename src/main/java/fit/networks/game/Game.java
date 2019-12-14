@@ -2,6 +2,7 @@ package fit.networks.game;
 
 import fit.networks.game.gamefield.Field;
 import fit.networks.game.gamefield.GameCell;
+import fit.networks.game.gamefield.Square;
 import fit.networks.gamer.Gamer;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -9,6 +10,8 @@ import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -21,14 +24,51 @@ public class Game {
     private Deque<Coordinates> foods = new ArrayDeque<>();
     private AtomicInteger gameStateId = new AtomicInteger(0);
     private Field field;
+    private List<Square> squares;
 
     public Game(GameConfig gameConfig) {
         this.gameConfig = gameConfig;
+        initSquares();
     }
 
     public Game(GameConfig gameConfig, Deque<Coordinates> foods) {
         this.gameConfig = gameConfig;
         this.foods = foods;
+    }
+
+    private void initSquares(){
+        squares = new ArrayList<>();
+        for (int x = 0; x < gameConfig.getWidth() - 5; x++) {
+            for (int y = 0; y < gameConfig.getWidth() - 5; y++) {
+                squares.add(new Square(Coordinates.of(x, y)));
+            }
+        }
+    }
+
+    public void updateAvailableCoordinates(){
+        initSquares();
+        for (int x = 0; x < gameConfig.getWidth(); x++) {
+            for (int y = 0; y < gameConfig.getHeight(); y++) {
+                Coordinates currentCoordinates = Coordinates.of(x, y);
+                if (GameCell.isSnake(field.in(currentCoordinates))){
+                    for (Square square : squares) {
+                        if (square.contains(currentCoordinates)){
+                            square.becomeUnavailable();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public Optional<Coordinates> getAvailableCoordinates() {
+        Optional<Square> available = squares.stream().filter(Square::isAvailable).findAny();
+
+        if (available.isEmpty()){
+            return Optional.empty();
+        }
+
+        return Optional.of(available.get().randomCoordinates());
     }
 
     public Optional<Gamer> getGamerByAddress(InetAddress inetAddress, int port) {
@@ -44,6 +84,7 @@ public class Game {
 
     public Optional<Gamer> getDeputy() {
         return gamers.stream().filter(Gamer::isDeputy).findFirst();
+
     }
 
     public boolean deputyAbsent() {
@@ -113,11 +154,23 @@ public class Game {
                             }
                         }));
 
-        getDying().forEach(g -> field.setCells(g.getSnakeCoordinates(), GameCell.getNoneCell()));
+        getDying().forEach(this::makeFoodFromSnake);
 
         neededFoods = gameConfig.getFoodStatic() + (int) (gameConfig.getFoodPerPlayer() * gamers.size());
         generateFood(neededFoods, field);
+        updateAvailableCoordinates();
         return field;
+    }
+
+    private void makeFoodFromSnake(Gamer gamer){
+        for (Coordinates snakeCoordinate : gamer.getSnakeCoordinates()) {
+            Random random = new Random();
+            if (random.nextFloat() < gameConfig.getDeadFoodProb()){
+                foods.add(snakeCoordinate);
+            } else {
+                field.setCells(snakeCoordinate, GameCell.getNoneCell());
+            }
+        }
     }
 
     private void generateFood(int count, Field field) {
@@ -132,6 +185,7 @@ public class Game {
             }
 
         }
+        drawFood();
     }
 
     public Field makeRepresentation() {
@@ -139,7 +193,7 @@ public class Game {
         drawFood();
         gamers.stream()
                 .filter(Predicate.not(Gamer::isDead))
-                .forEach(gamer -> drawSnake(gamer));
+                .forEach(this::drawSnake);
         return field;
     }
 
@@ -195,5 +249,9 @@ public class Game {
                 gamer.getSnake().becomeZombie();
             }
         }
+    }
+
+    public Optional<Gamer> getPotentialDeputy() {
+       return gamers.stream().filter(gamer -> !gamer.isMaster() && !gamer.isViewer()).findFirst();
     }
 }

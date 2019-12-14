@@ -41,14 +41,23 @@ public class Coordinates {
         return Coordinates.of(x,y);
     }
 
-    public Coordinates addition(Coordinates c){
-        int x = this.x + c.getX();
-        int y = this.y + c.getY();
-        return Coordinates.of(x,y);
-    }
+    public static Coordinates circuitCoordinates(Coordinates coordinatesToCircuit, Coordinates maxCoordinates) {
+        int x = coordinatesToCircuit.getX(), y = coordinatesToCircuit.getY();
+        int maxX = maxCoordinates.getX(), maxY = maxCoordinates.getY();
 
-    public Coordinates multiplication(int k){
-        return Coordinates.of(x * k, y * k);
+        if (x < 0) {
+            x = maxX + x;
+        }
+        if (y < 0) {
+            y = maxY + y;
+        }
+        if (x >= maxX) {
+            x = x % maxX;
+        }
+        if (y >= maxY) {
+            y = y % maxY;
+        }
+        return Coordinates.of(x, y);
     }
 
     public static Coordinates getRandomCoordinates(int maxX, int maxY){

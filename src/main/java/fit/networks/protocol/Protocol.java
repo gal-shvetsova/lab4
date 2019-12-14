@@ -40,4 +40,8 @@ public class Protocol {
     public static int getNoneValue() {
         return NONE_VALUE;
     }
+
+    public static String getErrorMessageCantJoin() {
+        return "NOT ENOUGH PLACE TO JOIN";
+    }
 }

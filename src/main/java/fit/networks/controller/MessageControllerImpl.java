@@ -58,9 +58,11 @@ public class MessageControllerImpl implements MessageController {
                     byte[] actualMessage = new byte[packet.getLength()];
                     System.arraycopy(packet.getData(), 0, actualMessage, 0, packet.getLength());
                     SnakesProto.GameMessage protoMessage = SnakesProto.GameMessage.parseFrom(actualMessage);
-                    receivedMessages.add(new Message(protoMessage, packet.getAddress(), packet.getPort()));
+                   // receivedMessages.add(new Message(protoMessage, packet.getAddress(), packet.getPort()));
+                    MessageHandlerImpl.getInstance().handle(new Message(protoMessage, packet.getAddress(), packet.getPort()));
                 }
             } catch (Exception e) {
+                e.printStackTrace();
                 this.socket.close();
             }
         });
@@ -75,7 +77,8 @@ public class MessageControllerImpl implements MessageController {
                     byte[] actualMessage = new byte[packet.getLength()];
                     System.arraycopy(packet.getData(), 0, actualMessage, 0, packet.getLength());
                     SnakesProto.GameMessage protoMessage = SnakesProto.GameMessage.parseFrom(actualMessage);
-                    receivedMessages.add(new Message(protoMessage, packet.getAddress(), packet.getPort()));
+                    MessageHandlerImpl.getInstance().handle(new Message(protoMessage, packet.getAddress(), packet.getPort()));
+                  //  receivedMessages.add(new Message(protoMessage, packet.getAddress(), packet.getPort()));
                 }
             } catch (Exception e) {
                 this.socket.close();
@@ -131,7 +134,18 @@ public class MessageControllerImpl implements MessageController {
     synchronized public void resendMessages(InetAddress inetAddress, int port) {
         for (Message message : receivedMessages) {
             Message msg = new Message(message.getProtoMessage(), inetAddress, port);
+            sendMessage(msg, false);
         }
+    }
+
+    @Override
+    public Message receiveMessage() {
+        try {
+            return receivedMessages.take();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }

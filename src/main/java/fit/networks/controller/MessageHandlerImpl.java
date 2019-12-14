@@ -13,8 +13,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.function.Consumer;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class MessageHandlerImpl implements MessageHandler {
@@ -65,11 +63,11 @@ public class MessageHandlerImpl implements MessageHandler {
         return messageHandler;
     }
 
-    private void handlePing(Message message){
+    private void handlePing(Message message) {
         gameController.addAliveGamer(message.getInetAddress(), message.getPort());
     }
 
-    private void handleSteer(Message message){
+    private void handleSteer(Message message) {
         gameController.changeSnakeDirection(message.getInetAddress(),
                 message.getPort(),
                 ProtoUtils.getDirection(message.getProtoMessage().getSteer().getDirection()));
@@ -83,25 +81,25 @@ public class MessageHandlerImpl implements MessageHandler {
         MessageControllerImpl.getInstance().sendMessage(ack, false);
     }
 
-    private void handleAck(Message message){
+    private void handleAck(Message message) {
         MessageControllerImpl.getInstance().confirmMessage(message);
     }
 
-    private void handleState(Message message){
+    private void handleState(Message message) {
         int stateId = -1;
 
         if (gameController.getGame().isPresent()) {
-           stateId = gameController.getGame().get().getGameStateId();
+            stateId = gameController.getGame().get().getGameStateId();
         }
 
         SnakesProto.GameState state = message.getProtoMessage().getState().getState();
-        if (stateId > state.getStateOrder()){
+        if (stateId > state.getStateOrder()) {
             return;
         }
         double deadFoodProb = state.getConfig().getDeadFoodProb();
         int delayMs = state.getConfig().getStateDelayMs();
         double foodPerPlayer = state.getConfig().getFoodPerPlayer();
-        int foodStatic  = state.getConfig().getFoodStatic();
+        int foodStatic = state.getConfig().getFoodStatic();
         int height = state.getConfig().getHeight();
         int width = state.getConfig().getWidth();
         GameConfig gameConfig = new GameConfig(width, height, foodStatic, foodPerPlayer, delayMs, deadFoodProb);
@@ -120,11 +118,11 @@ public class MessageHandlerImpl implements MessageHandler {
                 game.addGamer(gamer);
 
             }
-        } catch (Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
 
-        for (SnakesProto.GameState.Snake s: state.getSnakesList()) {
+        for (SnakesProto.GameState.Snake s : state.getSnakesList()) {
             Snake snake = new Snake(Coordinates.of(width, height));
             Deque<Coordinates> keyPoints = new ArrayDeque<>();
             s.getPointsList().forEach(x -> keyPoints.addLast(ProtoUtils.getCoordinates(x)));
@@ -152,18 +150,19 @@ public class MessageHandlerImpl implements MessageHandler {
         }
     }
 
-    private void handleJoin(Message message){
+    private void handleJoin(Message message) {
         String name = message.getProtoMessage().getJoin().getName();
         gameController.hostGame(name, message.getInetAddress(), message.getPort());
         sendAck(message);
     }
 
-    private void handleError(Message message){
+    private void handleError(Message message) {
+        gameController.handleError(message.getProtoMessage().getError().getErrorMessage());
         sendAck(message);
     }
 
-    private void handleRoleChange(Message message){
-        switch (message.getProtoMessage().getRoleChange().getReceiverRole()){
+    private void handleRoleChange(Message message) {
+        switch (message.getProtoMessage().getRoleChange().getReceiverRole()) {
             case NORMAL:
             case VIEWER:
                 gameController.becomeViewer(message.getInetAddress(), message.getPort());
@@ -179,7 +178,7 @@ public class MessageHandlerImpl implements MessageHandler {
         sendAck(message);
     }
 
-    private void handleTypeNotSet(Message message){
+    private void handleTypeNotSet(Message message) {
 
     }
 }
